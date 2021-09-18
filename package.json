@@ -1,0 +1,23 @@
+{
+  "name": "compiler-hardware-simulation",
+  "version": "1.0.0",
+  "description": "a project to showcase knowledge about processors and compilers",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ndbaker1/compiler-hardware-simulation.git"
+  },
+  "author": "Nicholas Baker",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ndbaker1/compiler-hardware-simulation/issues"
+  },
+  "homepage": "https://github.com/ndbaker1/compiler-hardware-simulation#readme",
+  "devDependencies": {
+    "@types/node": "^16.9.2",
+    "typescript": "^4.4.3"
+  }
+}
