@@ -16,12 +16,14 @@ export function createCPU(providedMemory?: Memory): CPU {
    */
 
   let AC = 0 // Accumulator
+  let SP = memoryInterface.LENGTH // Stack begins at the end of Memory and grows towards 0
+
   let PC = 0 // Program Counter
   let IR = 0 // Instruction Register
+
   let X = 0 // arithmetic register 1
   let Y = 0 // arithmetic register 2
   let V = 0 // Value register for returns
-  let SP = memoryInterface.LENGTH // Stack begins at the end of Memory and grows towards 0
 
 
   let exit = false
