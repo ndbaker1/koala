@@ -70,43 +70,43 @@ export function createCPU(providedMemory?: Memory): CPU {
    */
   const execute = () => {
 
-    // const { opCode, data } = parseInstruction(IR)
+    const { opCode, data } = parseInstruction(IR)
 
     let address = 0
 
-    switch (IR) {
+    switch (opCode) {
       case LOAD_VALUE: // load given value into AC
-        AC = fetch()
+        AC = data
         break
       case LOAD_ADDR: // load value from given address into AC
-        address = fetch()
+        address = data
         AC = load(address)
         break
       case LOAD_IND_ADDR: // load value in address given by value at given address into AC
-        address = fetch()
+        address = data
         address = load(address)
         AC = load(address)
         break
       case LOAD_IDX_X_ADDR: // load value at address of given address + X into AC
-        address = fetch()
+        address = data
         AC = load(address + X)
         break
       case LOAD_IDX_Y_ADDR: // load value at address of given address + Y into AC
-        address = fetch()
+        address = data
         AC = load(address + Y)
         break
       case LOAD_SP_X: // load value at address of SP + X into AC
         AC = load(SP + X)
         break
       case STORE_ADDR: // place the value in AC into the address given
-        address = fetch()
+        address = data
         store(address, AC)
         break
       case RAND: // get a random number from 0 to 100
         AC = Math.round(Math.random() * 100)
         break
       case PUT_PORT: // print character representation or integer based on port flag
-        const port = fetch()
+        const port = data
         switch (port) {
           case 1:
             process.stdout.write(AC.toFixed(0))
@@ -147,24 +147,20 @@ export function createCPU(providedMemory?: Memory): CPU {
         AC = SP
         break
       case JUMP_ADDR: // jump to address
-        PC = fetch()
+        PC = data
         break
       case JUMP_IF_EQUAL_ADDR: // jump to address if AC == 0
         if (AC == 0)
-          PC = fetch()
-        else
-          PC++
+          PC = data
         break
       case JUMP_IF_NOT_EQUAL_ADDR: // jump to address if AC != 0
         if (AC != 0)
-          PC = fetch()
-        else
-          PC++
+          PC = data
         break
       case CALL_ADDR: // push PC to SP and jump to address
         SP--
         store(SP, PC + 1)
-        PC = fetch()
+        PC = data
         break
       case RET: // return to address on SP (pop)
         PC = load(SP)
