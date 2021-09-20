@@ -1,85 +1,42 @@
-import { Grammer } from "./Parser"
-
-export const testGrammar: Grammer = [
-  {
-    name: 'Expression',
-    rules: [
-      {
-        rule: ['Term', '+', 'Term'],
-        params: [0, 3],
-        function: (op1: Term, op2: Term): Expression => ({ value: op1.value + op2.value })
-      }
-    ]
-  },
-  {
-    name: 'Term',
-    rules: [
-      {
-        rule: ['(', 'Expression', ')'],
-        params: [1],
-        function: (expr: Expression): Term => ({ value: expr.value })
-      },
-      {
-        rule: ['Integer'],
-        params: [0],
-        function: (int: Integer): Term => ({ value: int })
-      },
-    ]
-  },
-  {
-    name: 'Integer',
-    rules: [
-      {
-        rule: [/[0-9]+/],
-        params: [0],
-        function: (numString: string): Integer => +numString
-      }
-    ]
-  },
-  {
-    name: '+',
-    rules: [
-      {
-        rule: [/+/],
-        function: () => '+'
-      }
-    ]
-  },
-  {
-    name: ')',
-    rules: [
-      {
-        rule: [/\)/],
-        function: () => ')'
-      }
-    ]
-  },
-  {
-    name: '(',
-    rules: [
-      {
-        rule: [/\(/],
-        function: () => '('
-      }
-    ]
-  },
-]
-
-// supporting objects
-interface ProductionClass<T> { value: T }
-type Term = ProductionClass<number>
-type Expression = ProductionClass<number>
-type Integer = number
 
 
-const arithmeticGrammar = `
-Expression
-  = head:Term _ "+" _ tail:Term { return tail + head; }
-Term
-  = "(" _ expr:Expression _ ")" { return expr; }
-  / Integer
-Integer "integer"
-  = _ [0-9]+ { return parseInt(text(), 10); }
-_ "whitespace"
-  = [ \t\n\r]*
-`
+type CodeGen = number[]
+
+export const Grammar = {
+  Program: function Program(code: CodeGen) {
+    return code.concat([
+      // print AC
+      9 + (1 << 24),
+      // end program
+      50
+    ])
+  },
+  Expression: function Expression(op: '+' | '-', op1CodeGen: CodeGen, op2CodeGen: CodeGen) {
+    let code: CodeGen = []
+    // set AC to op2
+    code = code.concat(op1CodeGen)
+    // move AC to SP
+    code.push(27)
+    // set AC to op1
+    code = code.concat(op2CodeGen)
+    // move AC to X
+    code.push(14)
+    // move SP to AC
+    code.push(28)
+    // add/delete X to AC
+    switch (op) {
+      case '+':
+        code.push(10)
+        break
+      case '-':
+        code.push(12)
+        break
+    }
+    // AC contains new sum
+    return code
+  },
+  Integer: function Integer(int: number) {
+    // load number into AC
+    return [1 + (int << 24)]
+  }
+}

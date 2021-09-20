@@ -1,22 +1,25 @@
-import { parseInstruction } from "../compiler/Instruction"
+import { Arch, parseInstruction } from "../compiler/Instruction"
 import { createMemory, Memory } from "./Memory"
 
 
 export type CPU = {
   run: () => void
-  memoryInterface: Memory
+  memory: Memory
 }
 
-export function createCPU(providedMemory?: Memory, debug = false): CPU {
+class CPUConfig {
+  memory = createMemory()
+  debug = false
+}
 
-  const memoryInterface = providedMemory || createMemory()
+export function createCPU({ memory, debug }: CPUConfig = new CPUConfig()): CPU {
 
   /**
    * Stack accumulator with Registers architecture 
    */
 
   let AC = 0 // Accumulator
-  let SP = memoryInterface.LENGTH // Stack begins at the end of Memory and grows towards 0
+  let SP = memory.LENGTH // Stack begins at the end of Memory and grows towards 0
 
   let PC = 0 // Program Counter
   let IR = 0 // Instruction Register
@@ -55,7 +58,7 @@ export function createCPU(providedMemory?: Memory, debug = false): CPU {
    * @param address
    * @return data at memory address
    */
-  const load = (address: number) => memoryInterface.read(address)
+  const load = (address: number) => memory.read(address)
 
   /**
    * save data to memory address
@@ -63,49 +66,53 @@ export function createCPU(providedMemory?: Memory, debug = false): CPU {
    * @param address
    * @param data
    */
-  const store = (address: number, data: number) => memoryInterface.write(address, data)
+  const store = (address: number, data: number) => memory.write(address, data)
 
   /**
    * execute instruction with fetch cycle
    */
   const execute = () => {
 
+    if (debug) {
+      console.log(`AC=${AC}, X=${X}, Y=${Y}, SP=${SP}, PC=${PC}, IR=${IR}`)
+    }
+
     const { opCode, data } = parseInstruction(IR, debug)
 
     let address = 0
 
     switch (opCode) {
-      case LOAD_VALUE: // load given value into AC
+      case Arch.LOAD_VALUE: // load given value into AC
         AC = data
         break
-      case LOAD_ADDR: // load value from given address into AC
+      case Arch.LOAD_ADDR: // load value from given address into AC
         address = data
         AC = load(address)
         break
-      case LOAD_IND_ADDR: // load value in address given by value at given address into AC
+      case Arch.LOAD_IND_ADDR: // load value in address given by value at given address into AC
         address = data
         address = load(address)
         AC = load(address)
         break
-      case LOAD_IDX_X_ADDR: // load value at address of given address + X into AC
+      case Arch.LOAD_IDX_X_ADDR: // load value at address of given address + X into AC
         address = data
         AC = load(address + X)
         break
-      case LOAD_IDX_Y_ADDR: // load value at address of given address + Y into AC
+      case Arch.LOAD_IDX_Y_ADDR: // load value at address of given address + Y into AC
         address = data
         AC = load(address + Y)
         break
-      case LOAD_SP_X: // load value at address of SP + X into AC
+      case Arch.LOAD_SP_X: // load value at address of SP + X into AC
         AC = load(SP + X)
         break
-      case STORE_ADDR: // place the value in AC into the address given
+      case Arch.STORE_ADDR: // place the value in AC into the address given
         address = data
         store(address, AC)
         break
-      case RAND: // get a random number from 0 to 100
+      case Arch.RAND: // get a random number from 0 to 100
         AC = Math.round(Math.random() * 100)
         break
-      case PUT_PORT: // print character representation or integer based on port flag
+      case Arch.PUT_PORT: // print character representation or integer based on port flag
         const port = data
         switch (port) {
           case 1:
@@ -116,76 +123,76 @@ export function createCPU(providedMemory?: Memory, debug = false): CPU {
             break
         }
         break
-      case ADDX: // add X to AC
+      case Arch.ADDX: // add X to AC
         AC += X
         break
-      case ADDY: // add Y to AC
+      case Arch.ADDY: // add Y to AC
         AC += Y
         break
-      case SUBX: // subtract X from AC
+      case Arch.SUBX: // subtract X from AC
         AC -= X
         break
-      case SUBY: // subtract Y from AC
+      case Arch.SUBY: // subtract Y from AC
         AC -= Y
         break
-      case COPY_TO_X: // copy AC to X
+      case Arch.COPY_TO_X: // copy AC to X
         X = AC
         break
-      case COPY_FROM_X: // copy X to AC
+      case Arch.COPY_FROM_X: // copy X to AC
         AC = X
         break
-      case COPY_TO_Y: // copy AC to Y
+      case Arch.COPY_TO_Y: // copy AC to Y
         Y = AC
         break
-      case COPY_FROM_Y: // copy Y to AC
+      case Arch.COPY_FROM_Y: // copy Y to AC
         AC = Y
         break
-      case COPY_TO_SP: // copy AC to SP
+      case Arch.COPY_TO_SP: // copy AC to SP
         SP = AC
         break
-      case COPY_FROM_SP: // copy SP to AC
+      case Arch.COPY_FROM_SP: // copy SP to AC
         AC = SP
         break
-      case JUMP_ADDR: // jump to address
+      case Arch.JUMP_ADDR: // jump to address
         PC = data
         break
-      case JUMP_IF_EQUAL_ADDR: // jump to address if AC == 0
+      case Arch.JUMP_IF_EQUAL_ADDR: // jump to address if AC == 0
         if (AC == 0)
           PC = data
         break
-      case JUMP_IF_NOT_EQUAL_ADDR: // jump to address if AC != 0
+      case Arch.JUMP_IF_NOT_EQUAL_ADDR: // jump to address if AC != 0
         if (AC != 0)
           PC = data
         break
-      case CALL_ADDR: // push PC to SP and jump to address
+      case Arch.CALL_ADDR: // push PC to SP and jump to address
         SP--
         store(SP, PC + 1)
         PC = data
         break
-      case RET: // return to address on SP (pop)
+      case Arch.RET: // return to address on SP (pop)
         PC = load(SP)
         SP++
         break
-      case INCX: // increment X
+      case Arch.INCX: // increment X
         X++
         break
-      case DECX: // decrement X
+      case Arch.DECX: // decrement X
         X--
         break
-      case PUSH: // decrement SP and save AC to that location
+      case Arch.PUSH: // decrement SP and save AC to that location
         SP--
         store(SP, AC)
         break
-      case POP: // read value from stack and increment SP
+      case Arch.POP: // read value from stack and increment SP
         AC = load(SP)
         SP++
         break
-      case IRET: // return from system call
+      case Arch.IRET: // return from system call
         // load SP and PC from system stack
-        PC = load(memoryInterface.LENGTH - 1)
-        SP = load(memoryInterface.LENGTH)
+        PC = load(memory.LENGTH - 1)
+        SP = load(memory.LENGTH)
         break
-      case END: // cleanup and exit the program
+      case Arch.END: // cleanup and exit the program
         exit = true
         break
       default:
@@ -193,38 +200,7 @@ export function createCPU(providedMemory?: Memory, debug = false): CPU {
     }
   }
 
-  return { run, memoryInterface }
+  return { run, memory }
 }
 
 
-// Instruction Definitions
-const LOAD_VALUE = 1
-const LOAD_ADDR = 2
-const LOAD_IND_ADDR = 3
-const LOAD_IDX_X_ADDR = 4
-const LOAD_IDX_Y_ADDR = 5
-const LOAD_SP_X = 6
-const STORE_ADDR = 7
-const RAND = 8
-const PUT_PORT = 9
-const ADDX = 10
-const ADDY = 11
-const SUBX = 12
-const SUBY = 13
-const COPY_TO_X = 14
-const COPY_FROM_X = 15
-const COPY_TO_Y = 16
-const COPY_FROM_Y = 17
-const COPY_TO_SP = 18
-const COPY_FROM_SP = 19
-const JUMP_ADDR = 20
-const JUMP_IF_EQUAL_ADDR = 21
-const JUMP_IF_NOT_EQUAL_ADDR = 22
-const CALL_ADDR = 23
-const RET = 24
-const INCX = 25
-const DECX = 26
-const PUSH = 27
-const POP = 28
-const IRET = 30
-const END = 50
