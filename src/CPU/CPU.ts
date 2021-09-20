@@ -7,7 +7,7 @@ export type CPU = {
   memoryInterface: Memory
 }
 
-export function createCPU(providedMemory?: Memory): CPU {
+export function createCPU(providedMemory?: Memory, debug = false): CPU {
 
   const memoryInterface = providedMemory || createMemory()
 
@@ -70,7 +70,7 @@ export function createCPU(providedMemory?: Memory): CPU {
    */
   const execute = () => {
 
-    const { opCode, data } = parseInstruction(IR)
+    const { opCode, data } = parseInstruction(IR, debug)
 
     let address = 0
 
@@ -172,7 +172,7 @@ export function createCPU(providedMemory?: Memory): CPU {
       case DECX: // decrement X
         X--
         break
-      case PUSH: // decrement SP and save data to that location
+      case PUSH: // decrement SP and save AC to that location
         SP--
         store(SP, AC)
         break
