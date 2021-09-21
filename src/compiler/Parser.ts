@@ -5,11 +5,20 @@ export type Parser = {
   parse: (code: string) => any
 }
 
-export function createParser(grammar: string): Parser {
+class ParserOptions {
+  debug = false
+}
 
-  const parser = generate(grammar)
+/**
+ * 
+ * @param grammar 
+ * @returns 
+ */
+export function createParser(grammar: string, { debug }: ParserOptions = new ParserOptions()): Parser {
 
-  const parse = (code: string) => parser.parse(code)
+  const parser = generate(grammar, { trace: debug })
+
+  const parse = (code: string) => parser.parse(code.trim())
 
   return { parse }
 }
