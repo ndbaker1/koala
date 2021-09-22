@@ -1,6 +1,6 @@
 {
   "name": "compiler-hardware-simulation",
-  "homepage": "compiler-hardware-simulation",
+  "homepage": "/compiler-hardware-simulation",
   "version": "1.0.0",
   "description": "a project to showcase knowledge about processors and compilers",
   "scripts": {
