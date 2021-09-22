@@ -1,15 +1,10 @@
 import Editor from '@monaco-editor/react'
-import { languages } from 'monaco-editor'
 import React, { useEffect, useState } from 'react'
 import { complexGrammar, complexGrammarCode, Program } from './compiler/grammar'
 import { createParser } from './compiler/Parser'
 import { createCPU } from './CPU/CPU'
 import { createMemory } from './CPU/Memory'
 
-languages.typescript.typescriptDefaults.setDiagnosticsOptions({
-  noSemanticValidation: true,
-  noSyntaxValidation: true,
-})
 
 function App() {
   const [grammarCode, setGrammarCode] = useState(complexGrammar)
