@@ -1,9 +1,7 @@
 import Editor from '@monaco-editor/react'
-import React, { useEffect, useState } from 'react'
-import { complexGrammar, complexGrammarCode, Program } from './compiler/grammar'
-import { createParser } from './compiler/Parser'
-import { createCPU } from './CPU/CPU'
-import { createMemory } from './CPU/Memory'
+import React, { useState } from 'react'
+import { complexGrammar, complexGrammarCode, Program } from '../src/compiler/grammar'
+import { createParser } from '../src/compiler/Parser'
 
 
 function App() {
