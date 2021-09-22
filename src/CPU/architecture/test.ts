@@ -106,10 +106,10 @@ export function createTestCPU({ memory, debug }: CPUConfig): CPU {
         const port = data
         switch (port) {
           case 1:
-            process.stdout.write(AC.toFixed(0))
+            // process.stdout.write(AC.toFixed(0))
             break
           case 2:
-            process.stdout.write(String.fromCharCode(AC))
+            // process.stdout.write(String.fromCharCode(AC))
             break
         }
         break
