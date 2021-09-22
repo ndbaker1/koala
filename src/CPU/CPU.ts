@@ -12,7 +12,7 @@ export type CPU = {
  */
 export class CPUConfig {
   memory = createMemory()
-  debug = false
+  debug?= false
 }
 
 /**
