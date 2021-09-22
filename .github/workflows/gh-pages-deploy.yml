@@ -16,10 +16,10 @@ jobs:
 
       - name: Install and Build
         env:
-          BASE_HREF: personal-site
+          BASE_HREF: compiler-hardware-simulation
         run: |
           npm install -f
-          npm run build
+          npm run build -- --base=$BASE_HREF
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@4.1.4
         with:
