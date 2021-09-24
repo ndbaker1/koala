@@ -1,7 +1,7 @@
 export type Memory = {
   read: (address: number) => number
   write: (address: number, data: number) => void
-  load: (arr: Int32Array) => void
+  load: (arr: Uint32Array) => void
   LENGTH: number
 }
 
@@ -12,14 +12,14 @@ export type Memory = {
 export function createMemory(): Memory {
 
   const LENGTH = 2000
-  const MEMORY = new Int32Array(LENGTH)
+  const MEMORY = new Uint32Array(LENGTH)
 
   // memory read wrapper
   const read = (address: number) => MEMORY[address]
   // memory write wrapper
   const write = (address: number, data: number) => { MEMORY[address] = data }
 
-  const load = (arr: Int32Array) => MEMORY.set(arr)
+  const load = (arr: Uint32Array) => MEMORY.set(arr)
 
   return { read, write, load, LENGTH }
 }

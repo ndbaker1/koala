@@ -5,7 +5,26 @@ export const ASTParserExample = `// Here is where you will write an implementati
 ASTRoot
 
 // Return a String of the result
-return 'machine code representation'
+let code  = ''
+
+for (const stmt of ASTRoot) {
+    switch(stmt.action) {
+        case '=':
+            code += 1 + (+stmt.expr.value << 24) + '\\n'
+            break
+        case 'increment':
+            code += 14 + '\\n'
+            code += 1 + (1 << 24) + '\\n'
+            code += 10 + '\\n'
+            break
+        case 'print':
+            code += 9 + (2 << 24) + '\\n'
+            break
+    }
+}
+return code + 50
+
+
 `
 
 export const CodeExample = `fun main() {

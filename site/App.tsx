@@ -3,16 +3,19 @@ import React, { useState } from 'react'
 import { createParser } from '../src/compiler/Parser'
 import { themes } from './services/theme.service'
 
+import { bootstrapASTParser } from '../src/compiler/ASTParser'
 import {
   ASTParserExample,
   CodeExample,
   GrammarExample,
 } from './examples'
+import { createMemory } from '../src/CPU/Memory'
+import { createCPU } from '../src/CPU/CPU'
 
 themes[0].setCurrent()
 
 const ASTRootVariableName = 'ASTRoot'
-const bootstrapASTParser = (parserCode: string) => `let ${ASTRootVariableName} = arguments[0]\n${parserCode}`
+const ASTParser = bootstrapASTParser(ASTRootVariableName)
 
 function App() {
   const [grammarCode, setGrammarCode] = useState(GrammarExample)
@@ -23,7 +26,7 @@ function App() {
 
   const [grammarParser, setGrammarParser] = useState(createParser(grammarCode))
 
-  const [ASTParser, setASTParser] = useState(bootstrapASTParser(ASTParserCode))
+  const [output, setOutput] = useState('')
 
   return (
     <div style={{
@@ -54,7 +57,7 @@ function App() {
         />
       </section>
 
-      <button onClick={() => setAST(grammarParser.parse(code))}>COMPILE</button>
+      <button onClick={() => setAST(grammarParser.parse(code))}>COMPILE CODE</button>
 
       <section id="AST-viewer">
         <Editor
@@ -63,7 +66,7 @@ function App() {
           width='900px'
           theme="vs-dark"
           language="json"
-          value={JSON.stringify(AST, null, 2)}
+          value={JSON.stringify(AST, null, 4)}
         />
       </section>
 
@@ -78,6 +81,8 @@ function App() {
         />
       </section>
 
+      <button onClick={() => setAssembly(((Function(ASTParser(ASTParserCode)) as (a: any) => string)(AST)))}>COMPILE AST</button>
+
       <section id="assembly-viewer">
         <Editor
           options={{ readOnly: true }}
@@ -88,7 +93,22 @@ function App() {
         />
       </section>
 
-      <div id="terminal"></div>
+      <button onClick={() => {
+        const memory = createMemory()
+        memory.load(new Uint32Array(assembly.split('\n').map(Number)))
+        const cpu = createCPU({ memory })
+        setOutput(cpu.run())
+      }}>RUN ASSEMBLY</button>
+
+      <section id="terminal">
+        <Editor
+          options={{ readOnly: true }}
+          theme="vs-dark"
+          height='500px'
+          width='900px'
+          value={output}
+        />
+      </section>
     </div>
   )
 }

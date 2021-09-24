@@ -21,6 +21,7 @@ export function createTestCPU({ memory, debug }: CPUConfig): CPU {
 
   let exit = false
 
+  let output = ''
   /**
    * Run the program with Fetch and Execute Cycle
    */
@@ -29,6 +30,8 @@ export function createTestCPU({ memory, debug }: CPUConfig): CPU {
     // while the fetch does not fail, run the returned operation
     while (!exit && (IR = fetch()) != -1)
       execute()
+
+    return output
   }
 
   /**
@@ -106,10 +109,10 @@ export function createTestCPU({ memory, debug }: CPUConfig): CPU {
         const port = data
         switch (port) {
           case 1:
-            // process.stdout.write(AC.toFixed(0))
+            output += AC.toFixed(0)
             break
           case 2:
-            // process.stdout.write(String.fromCharCode(AC))
+            output += String.fromCharCode(AC)
             break
         }
         break
