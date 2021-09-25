@@ -6,9 +6,11 @@ ASTRoot
 
 // Return a String of the result
 let code  = ''
-
-for (const stmt of ASTRoot) {
-    switch(stmt.action) {
+// keep track of the variable addresses on the stack
+const variableAddresses = {}
+// function helpers 
+function codeGen(node) {
+    switch(node.action) {
         case '=':
             code += 1 + (+stmt.expr.value << 24) + '\\n'
             break
@@ -22,8 +24,10 @@ for (const stmt of ASTRoot) {
             break
     }
 }
-return code + 50
 
+// real work
+for (const node of ASTRoot) codeGen(node)
+return code + 50
 
 `
 
@@ -147,23 +151,28 @@ WHENCASE
   / WS "else" WS "->" WS case_value:EXPR
     { return { case: 'else', case_value } }
 EXPR
-  = fun_call:FUNC_CALL binop:BINARYOP WS expr:EXPR
-    { return { fun_call, binop, expr } }
-  / id:IDENTIFIER WS binop:BINARYOP WS expr:EXPR
-    { return { id, binop, expr } }
-  / str:STRINGLIT WS binop:BINARYOP WS expr:EXPR
-    { return { str, binop, expr } }
-  / int:INTLIT WS binop:BINARYOP WS expr:EXPR
-    { return { int, binop, expr } }
+  = BINARY_EXPR
   / FUNC_CALL
   / IDENTIFIER
   / STRINGLIT
   / INTLIT
   / BOOLLIT
 
+BINARY_EXPR
+  = fun_call:FUNC_CALL WS binop:BINARYOP WS expr:EXPR
+    { return { type: 'binary_expr', binop, args: [fun_call, expr] } }
+  / id:IDENTIFIER WS binop:BINARYOP WS expr:EXPR
+    { return { type: 'binary_expr', binop, args: [id, expr] } }
+  / str:STRINGLIT WS binop:BINARYOP WS expr:EXPR
+    { return { type: 'binary_expr', binop, args: [str, expr] } }
+  / int:INTLIT WS binop:BINARYOP WS expr:EXPR
+    { return { type: 'binary_expr', binop, args: [int, expr] } }
+
 ARGS
-  = EXPR WS "," WS ARGS
-  / EXPR
+  = expr:EXPR WS "," WS args:ARGS
+    { return [expr].concat(args) }
+  / expr:EXPR
+    { return [expr] }
 
 BINARYOP = ("*"/"/"/"+"/"-"/"<"/">"/"<="/">="/"=="/"<>"/"||"/"&&")
   { return text() }
@@ -171,9 +180,9 @@ ASSIGN = "="
 
 FUNC_CALL
   = id:IDENTIFIER "(" WS args:ARGS WS ")"
-    { return { type: 'function_call', id: id.id, args }  }
+    { return { type: 'function_call', id: id.id, args } }
   / id:IDENTIFIER "(" ")"
-    { return { type: 'function_call', id: id.id, args }  }
+    { return { type: 'function_call', id: id.id, args: [] } }
 
 IDENTIFIER = [a-zA-Z][a-zA-Z0-9]*
   { return { type: 'var', id: text() } }

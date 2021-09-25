@@ -1,5 +1,5 @@
 import Editor from '@monaco-editor/react'
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { createParser } from '../src/compiler/Parser'
 import { themes } from './services/theme.service'
 
@@ -18,13 +18,13 @@ const ASTRootVariableName = 'ASTRoot'
 const ASTParser = bootstrapASTParser(ASTRootVariableName)
 
 function App() {
-  const [grammarCode, setGrammarCode] = useState(GrammarExample)
+  const grammarCodeRef = useRef(GrammarExample)
   const [ASTParserCode, setASTParserCode] = useState(ASTParserExample)
   const [code, setCode] = useState(CodeExample)
   const [AST, setAST] = useState(undefined)
   const [assembly, setAssembly] = useState('')
 
-  const [grammarParser, setGrammarParser] = useState(createParser(grammarCode))
+  const [grammarParser, setGrammarParser] = useState(createParser(grammarCodeRef.current))
 
   const [output, setOutput] = useState('')
 
@@ -37,12 +37,12 @@ function App() {
 
       <section id="grammar-editor">
         <Editor
-          height='500px'
+          height='800px'
           width='900px'
           theme="vs-dark"
           language="javascript"
-          value={grammarCode}
-          onChange={value => setGrammarCode(value || '')}
+          value={grammarCodeRef.current}
+          onChange={value => grammarCodeRef.current = (value || '')}
         />
       </section>
 
@@ -57,7 +57,13 @@ function App() {
         />
       </section>
 
-      <button onClick={() => setAST(grammarParser.parse(code))}>COMPILE CODE</button>
+      <button onClick={() => {
+        try {
+          setAST(grammarParser.parse(code))
+        } catch (e) {
+          console.error(e)
+        }
+      }}>COMPILE CODE</button>
 
       <section id="AST-viewer">
         <Editor
