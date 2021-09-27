@@ -151,7 +151,9 @@ WHENCASE
   / WS "else" WS "->" WS case_value:EXPR
     { return { case: 'else', case_value } }
 EXPR
-  = BINARY_EXPR
+  = "(" WS expr:EXPR WS ")"
+    { return expr }
+  / BINARY_EXPR
   / FUNC_CALL
   / IDENTIFIER
   / STRINGLIT
