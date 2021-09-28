@@ -1,35 +1,5 @@
-export const ASTParserExample = `// Here is where you will write an implementation
-// of the AST in Assembly, Machine Code, or etc
+import { objectToVarDecls } from "./services/ASTParser"
 
-// Access the root of the AST using:
-ASTRoot
-
-// Return a String of the result
-let code  = ''
-// keep track of the variable addresses on the stack
-const variableAddresses = {}
-// function helpers 
-function codeGen(node) {
-    switch(node.action) {
-        case '=':
-            code += 1 + (+stmt.expr.value << 24) + '\\n'
-            break
-        case 'increment':
-            code += 14 + '\\n'
-            code += 1 + (1 << 24) + '\\n'
-            code += 10 + '\\n'
-            break
-        case 'print':
-            code += 9 + (2 << 24) + '\\n'
-            break
-    }
-}
-
-// real work
-for (const node of ASTRoot) codeGen(node)
-return code + 50
-
-`
 
 export const CodeExample = `fun main() {
   number = 22
@@ -89,6 +59,33 @@ fun recursion(val) {
   }
 }`
 
+export const ASTTypes = {
+  test: function (node: any) { },
+  functionDefinition: 'function_def',
+  functionCall: 'function_call',
+  ifControl: 'if',
+  ifElseControl: 'if_else',
+  functionReturn: 'return',
+  functionReturnExpr: 'return_expr',
+  whileControl: 'while',
+  expr: 'expr',
+  binaryExpr: 'binary_expr',
+  variable: 'variable',
+  bool: 'bool',
+  string: 'str',
+  int: 'int',
+  print: 'print',
+  assignment: 'assignment',
+  increment: 'increment',
+  decrement: 'decrement',
+
+  when: 'when',
+  whenCaseStmt: 'when_case_stmt',
+  whenCaseExpr: 'when_case_expr',
+  whenElseStmt: 'when_else_stmt',
+  whenElseExpr: 'when_else_expr',
+}
+
 export const GrammarExample = `PROGRAM
   = stmts:STMTS LINEEND prog:PROGRAM
     { return stmts.concat(prog) }
@@ -98,10 +95,10 @@ export const GrammarExample = `PROGRAM
   / STMTS
 
 FUNC_DEF
-  = WS "fun" WS id:IDENTIFIER "(" WS args:ARGS WS ")" WS stmts:BLOCK
-    { return { type: 'function_def', id: id.id, args, stmts } }
+  = WS "fun" WS id:IDENTIFIER "(" WS params:PARAMETERS WS ")" WS stmts:BLOCK
+    { return { type: '${ASTTypes.functionDefinition}', id: id.id, params, stmts } }
   / WS "fun" WS id:IDENTIFIER "(" ")" WS stmts:BLOCK
-    { return { type: 'function_def', id: id.id, args: [], stmts } }
+    { return { type: '${ASTTypes.functionDefinition}', id: id.id, params: [], stmts } }
 STMTS
   = stmt:STMT LINEEND stmts:STMTS
     { return [stmt].concat(stmts) }
@@ -109,25 +106,25 @@ STMTS
     { return [stmt] }
 STMT
   = WS "if" WS "(" cond:EXPR ")" WS true_branch:BLOCK WS "else" WS false_branch:BLOCK
-    { return { control: 'if_else', cond, true_branch, false_branch } }
+    { return { type: '${ASTTypes.ifElseControl}', cond, true_branch, false_branch } }
   / WS "if" "(" cond:EXPR ")" WS stmts:BLOCK
-    { return { control: 'if_else', cond, stmts } }
+    { return { type: '${ASTTypes.ifControl}', cond, stmts } }
   / WS when:WHEN
     { return when }
   / WS "while" "(" cond:EXPR ")" WS stmts:BLOCK
-    { return { control: 'while', cond, stmts } }
+    { return { type: '${ASTTypes.whileControl}', cond, stmts } }
   / WS "print" "(" expr:EXPR ")"
-    { return { action: 'print', expr } }
-  / WS id:IDENTIFIER WS action:ASSIGN WS expr:EXPR
-    { return { id, action, expr } }
+    { return { type: '${ASTTypes.print}', expr } }
+  / WS id:IDENTIFIER WS type:ASSIGN WS expr:EXPR
+    { return { id, type: '${ASTTypes.assignment}', expr } }
   / WS "return" WS expr:EXPR
-    { return { control: 'return_expr', expr } }
+    { return { type: '${ASTTypes.functionReturnExpr}', expr } }
   / WS "return"
-    { return { control: 'return' } }
+    { return { type: '${ASTTypes.functionReturn}' } }
   / WS id:IDENTIFIER "++"
-    { return { action: 'increment', id } }
+    { return { type: '${ASTTypes.increment}', id } }
   / WS id:IDENTIFIER "--"
-    { return { action: 'decrement', id } }
+    { return { type: '${ASTTypes.decrement}', id } }
   / WS block:BLOCK
     { return block }
 BLOCK
@@ -135,7 +132,7 @@ BLOCK
     { return stmts }
 WHEN
   = "when" WS "(" expr:EXPR ")" WS "{" LINEEND when_cases:WHENCASES LINEEND WS "}"
-    { return { control: 'when', expr, when_cases } }
+    { return { type: '${ASTTypes.when}', expr, when_cases } }
 WHENCASES
   = when_case:WHENCASE LINEEND when_cases:WHENCASES
     { return [when_case].concat(when_cases) }
@@ -143,13 +140,13 @@ WHENCASES
     { return [when_case] }
 WHENCASE
   = WS case_expr:EXPR WS "->" WS case_value:STMT
-    { return { case: 'expr', case_expr, case_value } }
+    { return { type: '${ASTTypes.whenCaseStmt}', case_expr, case_value } }
   / WS case_expr:EXPR WS "->" WS case_value:EXPR
-    { return { case: 'expr', case_expr, case_value } }
+    { return { type: '${ASTTypes.whenCaseExpr}', case_expr, case_value } }
   / WS "else" WS "->" WS case_value:STMT
-    { return { case: 'else', case_value } }
+    { return { type: '${ASTTypes.whenElseStmt}', case_value } }
   / WS "else" WS "->" WS case_value:EXPR
-    { return { case: 'else', case_value } }
+    { return { type: '${ASTTypes.whenElseExpr}', case_value } }
 EXPR
   = "(" WS expr:EXPR WS ")"
     { return expr }
@@ -162,13 +159,19 @@ EXPR
 
 BINARY_EXPR
   = fun_call:FUNC_CALL WS binop:BINARYOP WS expr:EXPR
-    { return { type: 'binary_expr', binop, args: [fun_call, expr] } }
+    { return { type: '${ASTTypes.binaryExpr}', binop, args: [fun_call, expr] } }
   / id:IDENTIFIER WS binop:BINARYOP WS expr:EXPR
-    { return { type: 'binary_expr', binop, args: [id, expr] } }
+    { return { type: '${ASTTypes.binaryExpr}', binop, args: [id, expr] } }
   / str:STRINGLIT WS binop:BINARYOP WS expr:EXPR
-    { return { type: 'binary_expr', binop, args: [str, expr] } }
+    { return { type: '${ASTTypes.binaryExpr}', binop, args: [str, expr] } }
   / int:INTLIT WS binop:BINARYOP WS expr:EXPR
-    { return { type: 'binary_expr', binop, args: [int, expr] } }
+    { return { type: '${ASTTypes.binaryExpr}', binop, args: [int, expr] } }
+
+PARAMETERS
+  = id:IDENTIFIER WS "," WS params:PARAMETERS
+    { return [id].concat(params) }
+  / id:IDENTIFIER
+    { return [id] }
 
 ARGS
   = expr:EXPR WS "," WS args:ARGS
@@ -182,19 +185,40 @@ ASSIGN = "="
 
 FUNC_CALL
   = id:IDENTIFIER "(" WS args:ARGS WS ")"
-    { return { type: 'function_call', id: id.id, args } }
+    { return { type: '${ASTTypes.functionCall}', id: id.id, args } }
   / id:IDENTIFIER "(" ")"
-    { return { type: 'function_call', id: id.id, args: [] } }
+    { return { type: '${ASTTypes.functionCall}', id: id.id, args: [] } }
 
 IDENTIFIER = [a-zA-Z][a-zA-Z0-9]*
-  { return { type: 'var', id: text() } }
+  { return { type: '${ASTTypes.variable}', id: text() } }
 INTLIT = "-"? [0-9]+
-  { return { type: 'int', value: parseInt(text()) } }
-STRINGLIT = "\'" [a-zA-Z0-9 \\n\\r\\t]* "\'"
-  { return { type: 'str', value: text() } }
+  { return { type: '${ASTTypes.int}', value: parseInt(text()) } }
+STRINGLIT = "'" [a-zA-Z0-9 \\n\\r\\t]* "'"
+  { return { type: '${ASTTypes.string}', value: text() } }
 BOOLLIT = ("true"/"false")
-  { return { type: 'bool', value: Boolean(text()) } }
+  { return { type: '${ASTTypes.bool}', value: Boolean(text()) } }
 
 LINEEND = WS NL
 NL = [\\r\\n]+
 WS = [ \\t]*`
+
+
+export const ASTParserExample = `// Here is where you will write an implementation
+// of the AST in Assembly, Machine Code, or etc
+
+// Access the root of the AST using:
+ASTRoot
+
+// Return a String of the result
+let code  = ''
+// keep track of the variable addresses on the stack
+const variableAddresses = {}
+// Starting stack pointer offset
+let stackOffset = 0
+// the example grammar handles types like this
+${objectToVarDecls(ASTTypes)} 
+// real work
+for (const node of ASTRoot) codeGen[node.type](node)
+return code + 50
+
+`

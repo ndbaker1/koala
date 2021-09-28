@@ -1,6 +1,6 @@
 body {
   margin: 0;
-  overflow-x: hidden;
+  overflow: hidden;
   min-height: 100vh;
   /* background-color: var(--bg-color); */
   background-image: linear-gradient(-15deg, var(--bg-gradient2), var(--bg-gradient1));
@@ -9,4 +9,8 @@ body {
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+}
+
+* {
+  box-sizing: border-box;
 }

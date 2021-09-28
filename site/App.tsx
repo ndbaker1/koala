@@ -2,7 +2,7 @@ import Editor from '@monaco-editor/react'
 import React, { useRef, useState } from 'react'
 import { createParser } from '../src/compiler/Parser'
 
-import { bootstrapASTParser } from '../src/compiler/ASTParser'
+import { bootstrapASTParser } from './services/ASTParser'
 import {
   ASTParserExample,
   CodeExample,
@@ -17,18 +17,17 @@ const ASTParser = bootstrapASTParser(ASTRootVariableName)
 enum View {
   GRAMMAR = 0,
   CODE = 1,
-  AST = 2,
-  TERMINAL = 3,
+  TERMINAL = 2,
 }
 
 function App() {
   const grammarCodeRef = useRef(GrammarExample)
-  const [ASTParserCode, setASTParserCode] = useState(ASTParserExample)
-  const [code, setCode] = useState(CodeExample)
+  const ASTParserCodeRef = useRef(ASTParserExample)
+  const codeRef = useRef(CodeExample)
   const [AST, setAST] = useState(undefined)
   const [assembly, setAssembly] = useState('')
 
-  const [grammarParser, setGrammarParser] = useState(createParser(grammarCodeRef.current))
+  const grammarParserRef = useRef(createParser(grammarCodeRef.current))
 
   const [output, setOutput] = useState('')
 
@@ -37,9 +36,7 @@ function App() {
   function CurrentView() {
     switch (view) {
       case View.GRAMMAR:
-        return <GrammarEditor />
-      case View.AST:
-        return <ASTEditor />
+        return <Parsers />
       case View.CODE:
         return <CodeEditor />
       case View.TERMINAL:
@@ -47,100 +44,88 @@ function App() {
     }
   }
 
-  function GrammarEditor() {
+  function Parsers() {
     return (
-      <section id="grammar-editor">
+      <section id="grammar-editor" style={{ display: 'flex', flexDirection: 'row', height: '100%' }}>
         <Editor
-          height='60vh'
           width='900px'
           theme="vs-dark"
           language="javascript"
           value={grammarCodeRef.current}
           onChange={value => grammarCodeRef.current = (value || '')}
         />
+        <Editor
+          width='900px'
+          theme="vs-dark"
+          language="javascript"
+          value={ASTParserCodeRef.current}
+          onChange={value => ASTParserCodeRef.current = (value || '')}
+        />
         <button onClick={() => setView(View.CODE)}>Write Code</button>
-      </section >
+      </section>
     )
   }
 
   function CodeEditor() {
     return (
-      <section id="code-editor">
+      <section id="code-editor" style={{ display: 'flex', flexDirection: 'row', height: '100%' }}>
         <Editor
-          height='500px'
           width='900px'
           theme="vs-dark"
           language="r"
-          value={code}
-          onChange={value => setCode(value || '')}
+          value={codeRef.current}
+          onChange={value => codeRef.current = (value || '')}
         />
+
         <button onClick={() => {
           try {
-            setAST(grammarParser.parse(code))
-            setView(View.AST)
+            setAST(grammarParserRef.current.parse(codeRef.current))
           } catch (e) {
             console.error(e)
           }
         }}>Compile</button>
-      </section>
-    )
-  }
 
-  function ASTEditor() {
-    return (
-      <section id="AST">
+        <button onClick={() => {
+          setAssembly(((Function(ASTParser(ASTParserCodeRef.current)) as (a: any) => string)(AST)))
+          setView(View.TERMINAL)
+        }}>COMPILE AST</button>
+
         <section id="AST-viewer">
           <Editor
             options={{ readOnly: true }}
-            height='500px'
             width='900px'
             theme="vs-dark"
             language="json"
             value={JSON.stringify(AST, null, 4)}
           />
         </section>
-
-        <section id="parser-editor">
-          <Editor
-            height='500px'
-            width='900px'
-            theme="vs-dark"
-            language="javascript"
-            value={ASTParserCode}
-            onChange={value => setASTParserCode(value || '')}
-          />
-        </section>
-
-        <button onClick={() => setAssembly(((Function(ASTParser(ASTParserCode)) as (a: any) => string)(AST)))}>COMPILE AST</button>
-
       </section>
     )
   }
 
   function Run() {
     return (
-      <section id="terminal">
-
+      <section id="execute" style={{ display: 'flex', flexDirection: 'row', height: '100%' }}>
         <Editor
           options={{ readOnly: true }}
           theme="vs-dark"
-          height='500px'
           width='900px'
           value={assembly}
         />
-        <Editor
-          options={{ readOnly: true }}
-          theme="vs-dark"
-          height='500px'
-          width='900px'
-          value={output}
-        />
+
         <button onClick={() => {
           const memory = createMemory()
           memory.load(new Uint32Array(assembly.split('\n').map(Number)))
           const cpu = createCPU({ memory })
           setOutput(cpu.run())
         }}>RUN ASSEMBLY</button>
+
+        <Editor
+          options={{ readOnly: true }}
+          theme="vs-dark"
+          width='900px'
+          value={output}
+        />
       </section>
 
     )
@@ -156,9 +141,15 @@ function App() {
   }
 
   return (
-    <div style={{ display: 'grid', placeContent: 'center' }}>
-      <Tabs />
-      <CurrentView />
+    <div style={{ height: '100vh', padding: '1rem' }}>
+      <div style={{ display: 'grid', gridGap: '1rem', gridTemplateRows: 'auto auto', height: '100%' }}>
+        <div>
+          <Tabs />
+        </div>
+        <div style={{ height: '100%' }}>
+          <CurrentView />
+        </div>
+      </div>
     </div>
   )
 }
