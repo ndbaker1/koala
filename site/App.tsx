@@ -116,8 +116,8 @@ function App() {
         <button onClick={() => {
           const memory = createMemory()
           memory.load(new Uint32Array(assembly.split('\n').map(Number)))
-          const cpu = createCPU({ memory })
-          setOutput(cpu.run())
+          const cpu = createCPU({ memory, io: { output: (a) => setOutput(b => b + a) } })
+          cpu.run()
         }}>RUN ASSEMBLY</button>
 
         <Editor
