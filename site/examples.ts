@@ -1,4 +1,3 @@
-import { CodeGens } from "../src/compiler/grammar"
 import { objectToVarDecls } from "./services/ASTParser"
 
 
@@ -59,140 +58,100 @@ fun recursion(val) {
     c = 'string'
   }
 }`
-type ASTType =
-  | 'function_def'
-  | 'function_call'
-  | 'if'
-  | 'if_else'
-  | 'return'
-  | 'return_expr'
-  | 'while'
-  | 'expr'
-  | 'binary_expr'
-  | 'variable'
-  | 'bool'
-  | 'str'
-  | 'int'
-  | 'print'
-  | 'assignment'
-  | 'increment'
-  | 'decrement'
-  | 'when'
-  | 'when_case_stmt'
-  | 'when_case_expr'
-  | 'when_else_stmt'
-  | 'when_else_expr'
 
-export const ASTTypes: Record<ASTType, { name: ASTType, function: (node: any) => void }> = {
-  'function_def': {
-    name: 'function_def', function: function (node) {
+enum ASTType {
+  'function_def' = 'function_def',
+  'function_call' = 'function_call',
+  'if' = 'if',
+  'if_else' = 'if_else',
+  'return' = 'return',
+  'return_expr' = 'return_expr',
+  'while' = 'while',
+  'binary_expr' = 'binary_expr',
+  'variable' = 'variable',
+  'bool' = 'bool',
+  'str' = 'str',
+  'int' = 'int',
+  'print' = 'print',
+  'assignment' = 'assignment',
+  'increment' = 'increment',
+  'decrement' = 'decrement',
+  'when' = 'when',
+  'when_case_stmt' = 'when_case_stmt',
+  'when_case_expr' = 'when_case_expr',
+  'when_else_stmt' = 'when_else_stmt',
+  'when_else_expr' = 'when_else_expr',
+}
 
-    }
+// dummy var
+let code = ''
+export const CodeGens: Record<ASTType, (node: any) => void> = {
+  'function_def': function (node) {
+
   },
-  'function_call': {
-    name: 'function_call', function: function (node) {
+  'function_call': function (node) {
 
-    }
   },
-  'if': {
-    name: 'if', function: function (node) {
-
-    }
+  'if': function (node) {
+    code += 'if\n'
+    CodeGens[node.cond.type as ASTType](node.cond)
   },
-  'if_else': {
-    name: 'if_else', function: function (node) {
+  'if_else': function (node) {
 
-    }
   },
-  'return': {
-    name: 'return', function: function (node) {
+  'return': function (node) {
 
-    }
   },
-  'return_expr': {
-    name: 'return_expr', function: function (node) {
+  'return_expr': function (node) {
 
-    }
   },
-  'while': {
-    name: 'while', function: function (node) {
+  'while': function (node) {
 
-    }
   },
-  'expr': {
-    name: 'expr', function: function (node) {
-
-    }
+  'binary_expr': function (node) {
+    code += 'binary expr\n'
+    CodeGens[node.args[0].type as ASTType](node.args[0])
+    CodeGens[node.args[1].type as ASTType](node.args[1])
+    code += `perform ${node.binop}\n`
   },
-  'binary_expr': {
-    name: 'binary_expr', function: function (node) {
-
-    }
+  'variable': function (node) {
+    code += 'variable: ' + node.id + '\n'
   },
-  'variable': {
-    name: 'variable', function: function (node) {
+  'bool': function (node) {
 
-    }
   },
-  'bool': {
-    name: 'bool', function: function (node) {
+  'str': function (node) {
 
-    }
   },
-  'str': {
-    name: 'str', function: function (node) {
-
-    }
+  'int': function (node) {
+    code += 'int: ' + node.value + '\n'
   },
-  'int': {
-    name: 'int', function: function (node) {
+  'print': function (node) {
 
-    }
   },
-  'print': {
-    name: 'print', function: function (node) {
+  'assignment': function (node) {
 
-    }
   },
-  'assignment': {
-    name: 'assignment', function: function (node) {
+  'increment': function (node) {
 
-    }
   },
-  'increment': {
-    name: 'increment', function: function (node) {
+  'decrement': function (node) {
 
-    }
   },
-  'decrement': {
-    name: 'decrement', function: function (node) {
+  'when': function (node) {
 
-    }
   },
-  'when': {
-    name: 'when', function: function (node) {
+  'when_case_stmt': function (node) {
 
-    }
   },
-  'when_case_stmt': {
-    name: 'when_case_stmt', function: function (node) {
+  'when_case_expr': function (node) {
 
-    }
   },
-  'when_case_expr': {
-    name: 'when_case_expr', function: function (node) {
+  'when_else_stmt': function (node) {
 
-    }
   },
-  'when_else_stmt': {
-    name: 'when_else_stmt', function: function (node) {
+  'when_else_expr': function (node) {
 
-    }
-  },
-  'when_else_expr': {
-    name: 'when_else_expr', function: function (node) {
-
-    }
   },
 }
 
@@ -206,9 +165,9 @@ export const GrammarExample = `PROGRAM
 
 FUNC_DEF
   = WS "fun" WS id:IDENTIFIER "(" WS params:PARAMETERS WS ")" WS stmts:BLOCK
-    { return { type: '${ASTTypes.function_def.name}', id: id.id, params, stmts } }
+    { return { type: '${CodeGens.assignment.name}', id: id.id, params, stmts } }
   / WS "fun" WS id:IDENTIFIER "(" ")" WS stmts:BLOCK
-    { return { type: '${ASTTypes.function_def.name}', id: id.id, params: [], stmts } }
+    { return { type: '${CodeGens.function_def.name}', id: id.id, params: [], stmts } }
 STMTS
   = stmt:STMT LINEEND stmts:STMTS
     { return [stmt].concat(stmts) }
@@ -216,25 +175,25 @@ STMTS
     { return [stmt] }
 STMT
   = WS "if" WS "(" cond:EXPR ")" WS true_branch:BLOCK WS "else" WS false_branch:BLOCK
-    { return { type: '${ASTTypes.if_else.name}', cond, true_branch, false_branch } }
-  / WS "if" "(" cond:EXPR ")" WS stmts:BLOCK
-    { return { type: '${ASTTypes.if.name}', cond, stmts } }
+    { return { type: '${CodeGens.if_else.name}', cond, true_branch, false_branch } }
+  / WS "if" WS "(" cond:EXPR ")" WS stmts:BLOCK
+    { return { type: '${CodeGens.if.name}', cond, stmts } }
   / WS when:WHEN
     { return when }
-  / WS "while" "(" cond:EXPR ")" WS stmts:BLOCK
-    { return { type: '${ASTTypes.while.name}', cond, stmts } }
+  / WS "while" WS "(" cond:EXPR ")" WS stmts:BLOCK
+    { return { type: '${CodeGens.while.name}', cond, stmts } }
   / WS "print" "(" expr:EXPR ")"
-    { return { type: '${ASTTypes.print.name}', expr } }
+    { return { type: '${CodeGens.print.name}', expr } }
   / WS id:IDENTIFIER WS type:ASSIGN WS expr:EXPR
-    { return { id, type: '${ASTTypes.assignment.name}', expr } }
+    { return { id, type: '${CodeGens.assignment.name}', expr } }
   / WS "return" WS expr:EXPR
-    { return { type: '${ASTTypes.return_expr.name}', expr } }
+    { return { type: '${CodeGens.return_expr.name}', expr } }
   / WS "return"
-    { return { type: '${ASTTypes.return.name}' } }
+    { return { type: '${CodeGens.return.name}' } }
   / WS id:IDENTIFIER "++"
-    { return { type: '${ASTTypes.increment.name}', id } }
+    { return { type: '${CodeGens.increment.name}', id } }
   / WS id:IDENTIFIER "--"
-    { return { type: '${ASTTypes.decrement.name}', id } }
+    { return { type: '${CodeGens.decrement.name}', id } }
   / WS block:BLOCK
     { return block }
 BLOCK
@@ -242,7 +201,7 @@ BLOCK
     { return stmts }
 WHEN
   = "when" WS "(" expr:EXPR ")" WS "{" LINEEND when_cases:WHENCASES LINEEND WS "}"
-    { return { type: '${ASTTypes.when.name}', expr, when_cases } }
+    { return { type: '${CodeGens.when.name}', expr, when_cases } }
 WHENCASES
   = when_case:WHENCASE LINEEND when_cases:WHENCASES
     { return [when_case].concat(when_cases) }
@@ -250,13 +209,13 @@ WHENCASES
     { return [when_case] }
 WHENCASE
   = WS case_expr:EXPR WS "->" WS case_value:STMT
-    { return { type: '${ASTTypes.when_case_stmt.name}', case_expr, case_value } }
+    { return { type: '${CodeGens.when_case_stmt.name}', case_expr, case_value } }
   / WS case_expr:EXPR WS "->" WS case_value:EXPR
-    { return { type: '${ASTTypes.when_case_expr.name}', case_expr, case_value } }
+    { return { type: '${CodeGens.when_case_expr.name}', case_expr, case_value } }
   / WS "else" WS "->" WS case_value:STMT
-    { return { type: '${ASTTypes.when_else_stmt.name}', case_value } }
+    { return { type: '${CodeGens.when_else_stmt.name}', case_value } }
   / WS "else" WS "->" WS case_value:EXPR
-    { return { type: '${ASTTypes.when_else_expr.name}', case_value } }
+    { return { type: '${CodeGens.when_else_expr.name}', case_value } }
 EXPR
   = "(" WS expr:EXPR WS ")"
     { return expr }
@@ -269,13 +228,13 @@ EXPR
 
 BINARY_EXPR
   = fun_call:FUNC_CALL WS binop:BINARYOP WS expr:EXPR
-    { return { type: '${ASTTypes.binary_expr.name}', binop, args: [fun_call, expr] } }
+    { return { type: '${CodeGens.binary_expr.name}', binop, args: [fun_call, expr] } }
   / id:IDENTIFIER WS binop:BINARYOP WS expr:EXPR
-    { return { type: '${ASTTypes.binary_expr.name}', binop, args: [id, expr] } }
+    { return { type: '${CodeGens.binary_expr.name}', binop, args: [id, expr] } }
   / str:STRINGLIT WS binop:BINARYOP WS expr:EXPR
-    { return { type: '${ASTTypes.binary_expr.name}', binop, args: [str, expr] } }
+    { return { type: '${CodeGens.binary_expr.name}', binop, args: [str, expr] } }
   / int:INTLIT WS binop:BINARYOP WS expr:EXPR
-    { return { type: '${ASTTypes.binary_expr.name}', binop, args: [int, expr] } }
+    { return { type: '${CodeGens.binary_expr.name}', binop, args: [int, expr] } }
 
 PARAMETERS
   = id:IDENTIFIER WS "," WS params:PARAMETERS
@@ -295,18 +254,18 @@ ASSIGN = "="
 
 FUNC_CALL
   = id:IDENTIFIER "(" WS args:ARGS WS ")"
-    { return { type: '${ASTTypes.function_call.name}', id: id.id, args } }
+    { return { type: '${CodeGens.function_call.name}', id: id.id, args } }
   / id:IDENTIFIER "(" ")"
-    { return { type: '${ASTTypes.function_call.name}', id: id.id, args: [] } }
+    { return { type: '${CodeGens.function_call.name}', id: id.id, args: [] } }
 
 IDENTIFIER = [a-zA-Z][a-zA-Z0-9]*
-  { return { type: '${ASTTypes.variable.name}', id: text() } }
+  { return { type: '${CodeGens.variable.name}', id: text() } }
 INTLIT = "-"? [0-9]+
-  { return { type: '${ASTTypes.int.name}', value: parseInt(text()) } }
+  { return { type: '${CodeGens.int.name}', value: parseInt(text()) } }
 STRINGLIT = "'" [a-zA-Z0-9 \\n\\r\\t]* "'"
-  { return { type: '${ASTTypes.str.name}', value: text() } }
+  { return { type: '${CodeGens.str.name}', value: text() } }
 BOOLLIT = ("true"/"false")
-  { return { type: '${ASTTypes.bool.name}', value: Boolean(text()) } }
+  { return { type: '${CodeGens.bool.name}', value: Boolean(text()) } }
 
 LINEEND = WS NL
 NL = [\\r\\n]+
@@ -325,9 +284,9 @@ const variableAddresses = {}
 // Starting stack pointer offset
 let stackOffset = 0
 // the example grammar handles types like this
-${objectToVarDecls(ASTTypes)} 
+${objectToVarDecls(CodeGens)} 
 // real work
-for (const node of ASTRoot) codeGens[node.type](node)
+for (const node of ASTRoot) CodeGens[node.type](node)
 return code + 50
 
 `
