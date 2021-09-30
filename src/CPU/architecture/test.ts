@@ -5,7 +5,7 @@ import { CPU, CPUConfig } from "../CPU"
  * 
  * @returns test CPU architecture
  */
-export function createTestCPU({ memory, debug }: CPUConfig): CPU {
+export function createTestCPU({ memory, io, debug }: CPUConfig): CPU {
   /**
    * Stack accumulator with Registers architecture 
    */
@@ -21,7 +21,6 @@ export function createTestCPU({ memory, debug }: CPUConfig): CPU {
 
   let exit = false
 
-  let output = ''
   /**
    * Run the program with Fetch and Execute Cycle
    */
@@ -30,8 +29,6 @@ export function createTestCPU({ memory, debug }: CPUConfig): CPU {
     // while the fetch does not fail, run the returned operation
     while (!exit && (IR = fetch()) != -1)
       execute()
-
-    return output
   }
 
   /**
@@ -70,7 +67,7 @@ export function createTestCPU({ memory, debug }: CPUConfig): CPU {
       console.log(`AC=${AC}, X=${X}, Y=${Y}, SP=${SP}, PC=${PC}, IR=${IR}`)
     }
 
-    const { opCode, data } = parseInstruction(IR, debug)
+    const { opCode, data } = decodeInstruction(IR, debug)
 
     let address = 0
 
@@ -109,10 +106,10 @@ export function createTestCPU({ memory, debug }: CPUConfig): CPU {
         const port = data
         switch (port) {
           case 1:
-            output += AC.toFixed(0)
+            io?.output(AC.toFixed(0))
             break
           case 2:
-            output += String.fromCharCode(AC)
+            io?.output(String.fromCharCode(AC))
             break
         }
         break
@@ -214,7 +211,7 @@ export type Instruction = {
  * @param debug 
  * @returns 
  */
-function parseInstruction(instruction: number, debug = false): Instruction {
+function decodeInstruction(instruction: number, debug = false): Instruction {
   const instructionBuffer = new Uint8Array(new Uint32Array([instruction]).buffer)
   const [opCode, byte2, byte3, byte4] = instructionBuffer
   const parsedInstruction: Instruction = { opCode, data: (byte2 << 16) + (byte3 << 8) + byte4 }

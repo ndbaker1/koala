@@ -3,7 +3,7 @@ import { createMemory, Memory } from "./Memory"
 
 
 export type CPU = {
-  run: () => string
+  run: () => void
   memory: Memory
 }
 
@@ -12,6 +12,7 @@ export type CPU = {
  */
 export class CPUConfig {
   memory = createMemory()
+  io?= { output: (a: any) => { } }
   debug?= false
 }
 
