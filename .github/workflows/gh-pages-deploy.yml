@@ -16,7 +16,7 @@ jobs:
 
       - name: Install and Build
         env:
-          BASE_HREF: compiler-hardware-simulation
+          BASE_HREF: koala
         run: |
           npm install -f
           npm run build -- --base=$BASE_HREF
