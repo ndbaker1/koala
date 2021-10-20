@@ -1,5 +1,4 @@
 const mem_length: usize = 2048;
-const STACK_SIZE: usize = 2048;
 
 pub struct Memory {
     mem: [i32; mem_length],

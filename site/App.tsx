@@ -20,7 +20,11 @@ enum View {
   TERMINAL = 2,
 }
 
+import init, { run } from 'virtual-machine'
+init().then(_ => run(new Uint32Array([25 << 24, 0]), (str: string) => alert(str)))
+
 function App() {
+
   const grammarCodeRef = useRef(GrammarExample)
   const ASTParserCodeRef = useRef(ASTParserExample)
   const codeRef = useRef(CodeExample)
