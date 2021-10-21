@@ -1,7 +1,7 @@
 use koala::{
     grammar::{
         compiler::CodeGen,
-        grammar::{BinExpr, Expr, FunctionDefinition, If, Program, Statement, TopLevel, Variable},
+        grammar::{BinExpr, Expr, If, Program, Statement, TopLevel, Variable},
     },
     instructions::{CONST, END, PRINT},
 };

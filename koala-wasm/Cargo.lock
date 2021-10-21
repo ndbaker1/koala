@@ -68,6 +68,7 @@ dependencies = [
  "console_error_panic_hook",
  "js-sys",
  "koala",
+ "serde_json",
  "wasm-bindgen",
  "wasm-bindgen-test",
  "wee_alloc",

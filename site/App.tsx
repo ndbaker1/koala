@@ -1,163 +1,100 @@
 import Editor from '@monaco-editor/react'
-import React, { useRef, useState } from 'react'
-import { createParser } from '../src/compiler/Parser'
+import init, { run, sourceCodeGen, parseAst } from 'koala'
+import React, { Dispatch, SetStateAction } from 'react'
 
-import { bootstrapASTParser } from './services/ASTParser'
-import {
-  ASTParserExample,
-  CodeExample,
-  GrammarExample,
-} from './examples'
-import { createMemory } from '../src/CPU/Memory'
-import { createCPU } from '../src/CPU/CPU'
-
-const ASTRootVariableName = 'ASTRoot'
-const ASTParser = bootstrapASTParser(ASTRootVariableName)
-
-enum View {
-  GRAMMAR = 0,
-  CODE = 1,
-  TERMINAL = 2,
-}
-
-import init, { run } from 'virtual-machine'
-init().then(_ => run(new Uint32Array([25 << 24, 0]), (str: string) => alert(str)))
+const repo = "https://github.com/ndbaker1/koala"
 
 function App() {
 
-  const grammarCodeRef = useRef(GrammarExample)
-  const ASTParserCodeRef = useRef(ASTParserExample)
-  const codeRef = useRef(CodeExample)
-  const [AST, setAST] = useState(undefined)
-  const [assembly, setAssembly] = useState('')
+  React.useEffect(() => { init() }, [])
 
-  const grammarParserRef = useRef(createParser(grammarCodeRef.current))
+  const codeRef = React.useRef("")
+  const [ast, setAst] = React.useState("")
+  const vmCodeRef = React.useRef(new Uint32Array)
 
-  const [output, setOutput] = useState('')
-
-  const [view, setView] = useState(View.GRAMMAR)
-
-  function CurrentView() {
-    switch (view) {
-      case View.GRAMMAR:
-        return <Parsers />
-      case View.CODE:
-        return <CodeEditor />
-      case View.TERMINAL:
-        return <Run />
-    }
-  }
-
-  function Parsers() {
-    return (
-      <section id="grammar-editor" style={{ display: 'flex', flexDirection: 'row', height: '100%' }}>
-        <Editor
-          width='900px'
-          theme="vs-dark"
-          language="javascript"
-          value={grammarCodeRef.current}
-          onChange={value => grammarCodeRef.current = (value || '')}
-        />
-        <Editor
-          width='900px'
-          theme="vs-dark"
-          language="javascript"
-          value={ASTParserCodeRef.current}
-          onChange={value => ASTParserCodeRef.current = (value || '')}
-        />
-        <button onClick={() => setView(View.CODE)}>Write Code</button>
-      </section>
-    )
-  }
-
-  function CodeEditor() {
-    return (
-      <section id="code-editor" style={{ display: 'flex', flexDirection: 'row', height: '100%' }}>
-        <Editor
-          width='900px'
-          theme="vs-dark"
-          language="r"
-          value={codeRef.current}
-          onChange={value => codeRef.current = (value || '')}
-        />
-
-        <button onClick={() => {
-          try {
-            setAST(grammarParserRef.current.parse(codeRef.current))
-          } catch (e) {
-            console.error(e)
-          }
-        }}>Compile</button>
-
-        <button onClick={() => {
-          setAssembly(((Function(ASTParser(ASTParserCodeRef.current)) as (a: any) => string)(AST)))
-          setView(View.TERMINAL)
-        }}>COMPILE AST</button>
-
-        <section id="AST-viewer">
-          <Editor
-            options={{ readOnly: true }}
-            width='900px'
-            theme="vs-dark"
-            language="json"
-            value={JSON.stringify(AST, null, 4)}
-          />
-        </section>
-      </section>
-    )
-  }
-
-  function Run() {
-    return (
-      <section id="execute" style={{ display: 'flex', flexDirection: 'row', height: '100%' }}>
-        <Editor
-          options={{ readOnly: true }}
-          theme="vs-dark"
-          width='900px'
-          value={assembly}
-        />
-
-        <button onClick={() => {
-          const memory = createMemory()
-          memory.load(new Uint32Array(assembly.split('\n').map(Number)))
-          const cpu = createCPU({ memory, io: { output: (a) => setOutput(b => b + a) } })
-          cpu.run()
-        }}>RUN ASSEMBLY</button>
-
-        <Editor
-          options={{ readOnly: true }}
-          theme="vs-dark"
-          width='900px'
-          value={output}
-        />
-      </section>
-
-    )
-  }
-
-  function Tabs() {
-    const entries = Object.keys(View)
-    return <div style={{ display: 'flex' }}>
-      {entries
-        .splice(0, entries.length / 2)
-        .map(mode => <button onClick={() => setView(+mode)}>{View[+mode]}</button>)}
-    </div>
-  }
+  const environment = (): Environment => ({ codeRef, ast: [ast, setAst], vmCodeRef })
 
   return (
-    <div style={{ height: '100vh', padding: '1rem' }}>
-      <div style={{ display: 'grid', gridGap: '1rem', gridTemplateRows: 'auto auto', height: '100%' }}>
+    <>
+      <Intro />
+      <Playground env={environment()} />
+      <SyntaxTree env={environment()} />
+    </>
+  )
+}
+
+export default App
+
+type Environment = {
+  codeRef: React.MutableRefObject<string>,
+  ast: [string, Dispatch<SetStateAction<string>>],
+  vmCodeRef: React.MutableRefObject<Uint32Array>
+}
+
+function Intro() {
+  return (
+    <div className="max-w-screen-lg h-screen m-auto p-5 flex items-center justify-center">
+      <div className="w-full bg-white rounded-lg p-10 grid gap-10 md:grid-cols-2 sm:grid-cols-1">
         <div>
-          <Tabs />
+          <p className="text-5xl">
+            Koala.
+            <br />
+            <p className="text-gray-400"><b>ʕ •ᴥ•ʔ</b></p>
+          </p>
         </div>
-        <div style={{ height: '100%' }}>
-          <CurrentView />
+        <div className="grid grid-rows-2">
+          <p className="text-xl text-justify">
+            A Simple Programming Language that runs on a Stack-based Virtual Machine all written in Rust 🦀.
+          </p>
+          <div className="flex items-center justify-center">
+            <a className="bg-gray-600 text-gray-100 rounded-lg p-3" href={repo} target="_blank" rel="noopener noreferrer">Github</a>
+          </div>
         </div>
       </div>
     </div>
   )
 }
 
-export default App
+function Playground({ env }: { env: Environment }) {
+  return (
+    <div className="max-w-screen-lg h-screen m-auto p-5 flex items-center justify-center">
+      <div className="w-full bg-white rounded-lg p-5">
+        <Editor
+          height={500}
+          value={env.codeRef.current}
+          onChange={data => { env.codeRef.current = data || '' }} />
+        <div className="grid grid-cols-2">
+          <button onClick={() => { env.ast[1](parseAst(env.codeRef.current)) }}>Compile</button>
+          <button >Run</button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 
+function SyntaxTree({ env }: { env: Environment }) {
+  return (
+    <div className="max-w-screen-lg h-screen m-auto p-5 flex items-center justify-center">
+      <div className="w-full bg-gray-500 rounded-lg p-5">
+        <Editor
+          height={500}
+          value={env.ast[0]}
+          options={{ readOnly: true }} />
+      </div>
+    </div>
+  )
+}
+
+function Output({ env }: { env: Environment }) {
+  return (
+    <div className="max-w-screen-lg h-screen m-auto p-5 flex items-center justify-center">
+      <div className="w-full bg-gray-500 rounded-lg p-5">
+        <Editor
+          height={500}
+          value={env.ast[0]}
+          options={{ readOnly: true }} />
+      </div>
+    </div>
+  )
+}

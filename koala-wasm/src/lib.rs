@@ -1,3 +1,6 @@
+use koala::grammar::compiler::CodeGen;
+use koala::grammar::grammar::Program;
+use koala::grammar::parser::parse_code;
 use koala::kvm::VirtualMachine;
 use wasm_bindgen::prelude::*;
 
@@ -26,11 +29,33 @@ pub fn run(machine_code: &[u32], output_callback: &js_sys::Function) {
 }
 
 #[wasm_bindgen]
-pub fn compile(source_code: &str) -> js_sys::Object {
-    return js_sys::Object::new();
+#[allow(non_snake_case)]
+pub fn parseAst(source_code: &str) -> String {
+    let program_repr = match parse_code(source_code) {
+        Ok(program) => program,
+        Err(e) => panic!("{}", e),
+    };
+
+    match serde_json::to_string_pretty(&program_repr) {
+        Ok(ast_string) => ast_string,
+        Err(e) => panic!("{}", e),
+    }
 }
 
 #[wasm_bindgen]
-pub fn code_gen(ast: js_sys::Object) -> js_sys::Uint32Array {
-    return js_sys::Uint32Array::new(&js_sys::Array::new());
+#[allow(non_snake_case)]
+pub fn astCodeGen(ast_string: &str) -> Vec<u32> {
+    let program: Program = match serde_json::from_str(ast_string) {
+        Ok(p) => p,
+        Err(e) => panic!("{}", e),
+    };
+
+    program.code_gen()
+}
+
+#[wasm_bindgen]
+#[allow(non_snake_case)]
+pub fn sourceCodeGen(source_code: &str) -> Vec<u32> {
+    let ast_string = parseAst(source_code);
+    astCodeGen(&ast_string)
 }

@@ -1,6 +1,11 @@
+@import url("https://fonts.googleapis.com/css2?family=Dosis:wght@500&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 body {
   margin: 0;
-  overflow: hidden;
   min-height: 100vh;
   /* background-color: var(--bg-color); */
   background-image: linear-gradient(-15deg, var(--bg-gradient2), var(--bg-gradient1));
@@ -12,5 +17,6 @@ code {
 }
 
 * {
+  font-family: "Dosis", sans-serif;
   box-sizing: border-box;
 }
