@@ -92,8 +92,8 @@ impl CodeGen for BinExpr {
     fn code_gen(&self) -> Vec<u32> {
         let mut code = Vec::new();
 
-        code.extend(self.op1.code_gen());
         code.extend(self.op2.code_gen());
+        code.extend(self.op1.code_gen());
 
         match self.binop {
             BinOp::Plus => code.push(IADD),
