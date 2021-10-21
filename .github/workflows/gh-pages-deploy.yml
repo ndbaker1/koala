@@ -18,26 +18,27 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-        run: |
-          cd koala
-          cargo build --release --all-features
 
       - name: Wasm Pack
         uses: jetli/wasm-pack-action@v0.3.0
         with:
           # Optional version of wasm-pack to install(eg. 'v0.9.1', 'latest')
           version: 'latest'
-        run: |
-          cd koala-wasm
-          wasm-pack --target web
+
 
       - name: Install and Build
         env:
           BASE_HREF: koala
         run: |
+          cd koala
+          cargo build --release --all-features
+          cd ..
+          cd koala-wasm
+          wasm-pack --target web
+          cd ..
           npm install -f
           npm run build -- --base=$BASE_HREF
-          
+
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@4.1.4
         with:
