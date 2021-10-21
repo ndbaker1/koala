@@ -1,11 +1,13 @@
+import React from 'react'
+
 import Editor from '@monaco-editor/react'
 import ReactJson from 'react-json-view'
-
 import { VscRepo, VscTerminal } from 'react-icons/vsc'
-import init, { run, sourceCodeGen, parseAst } from 'koala'
-import React from 'react'
-import { Button } from '@chakra-ui/button'
+
 import { Box, Center, Grid, HStack, Text } from '@chakra-ui/layout'
+import { Button } from '@chakra-ui/button'
+
+import init, { run, sourceCodeGen, parseAst } from 'koala'
 import { KoalaCodeExampe } from './examples'
 
 const repo = "https://github.com/ndbaker1/koala"
@@ -18,7 +20,6 @@ export default function App() {
   const [ast, setAst] = React.useState("")
   const vmCodeRef = React.useRef(new Uint32Array)
   const [output, setOutput] = React.useState("")
-  const [showOutput, setShowOutput] = React.useState(true);
 
   const outputCallback = (str: string) => setOutput(cur => cur + str)
 
