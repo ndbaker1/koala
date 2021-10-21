@@ -14,6 +14,17 @@ jobs:
       - name: Checkout 🛎️
         uses: actions/checkout@v2.3.1
 
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+        run: cd koala && cargo build --release --all-features
+
+      - uses: jetli/wasm-pack-action@v0.3.0
+        with:
+          # Optional version of wasm-pack to install(eg. 'v0.9.1', 'latest')
+          version: 'latest'
+        run: |
+          cd koala-wasm && wasm-pack --target web
       - name: Install and Build
         env:
           BASE_HREF: koala
