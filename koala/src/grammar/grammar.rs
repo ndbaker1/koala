@@ -10,6 +10,7 @@ pub struct Program(pub Vec<TopLevel>);
 /// | FunctionDefinition
 /// | Statement
 #[derive(Deserialize, Serialize)]
+#[serde(untagged)]
 pub enum TopLevel {
     FunctionDefinition(FunctionDefinition),
     Statement(Statement),
@@ -34,7 +35,7 @@ pub enum Statement {
     Print(Expr),
     Return,
     ReturnExpr(Expr),
-    Assignment(Variable, Expr),
+    Assignment { var: Variable, expr: Expr },
 }
 
 /// If:
@@ -86,8 +87,23 @@ pub enum Expr {
     StringLit(String),
     IntLit(u32),
     Variable(Variable),
+    BinExpr(Box<BinExpr>),
 }
 
+#[derive(Deserialize, Serialize)]
+pub struct BinExpr {
+    pub op1: Expr,
+    pub op2: Expr,
+    pub binop: BinOp,
+}
+
+#[derive(Deserialize, Serialize)]
+pub enum BinOp {
+    Plus,
+    Minus,
+    Div,
+    Mul,
+}
 /// Variable:
 /// | identifier
 #[derive(Deserialize, Serialize)]

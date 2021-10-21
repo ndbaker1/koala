@@ -1,0 +1,15 @@
+[
+  {
+    "Print": {
+      "BinExpr": {
+        "op1": {
+          "IntLit": 6
+        },
+        "op2": {
+          "IntLit": 2
+        },
+        "binop": "Plus"
+      }
+    }
+  }
+]

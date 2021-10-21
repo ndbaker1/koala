@@ -1,9 +1,7 @@
-use std::env::args;
+use std::{env::args, path::Path};
 
-use koala::{
-    instructions::{CONST, END, PRINT},
-    kvm::VirtualMachine,
-};
+use byteorder::{BigEndian, ByteOrder};
+use koala::kvm::VirtualMachine;
 
 fn main() {
     let files: Vec<String> = args().collect();
@@ -17,6 +15,13 @@ fn main() {
     }
 }
 
-fn read_file(file: &str) -> Vec<u32> {
-    vec![CONST as u32, 1, PRINT as u32, 1, END as u32]
+fn read_file(file_path: &str) -> Vec<u32> {
+    let file_buffer = match std::fs::read(Path::new(file_path)) {
+        Ok(d) => d,
+        Err(e) => panic!("{}", e),
+    };
+    let mut inst_buffer: Vec<u32> = vec![0; file_buffer.len() / 4];
+    BigEndian::read_u32_into(&file_buffer, &mut inst_buffer);
+
+    inst_buffer
 }

@@ -1,7 +1,8 @@
-use crate::instructions::{CONST, END, LOAD, PRINT};
+use crate::instructions::{CONST, END, IADD, IDIV, IMUL, ISUB, LOAD, PRINT};
 
 use super::grammar::{
-    Expr, If, IfElse, Program, Statement, TopLevel, Variable, When, WhenCase, WhenElse,
+    BinExpr, BinOp, Expr, If, IfElse, Program, Statement, TopLevel, Variable, When, WhenCase,
+    WhenElse,
 };
 
 pub trait CodeGen {
@@ -82,7 +83,26 @@ impl CodeGen for Expr {
                 .collect(),
             Self::BoolLit(truthy) => vec![CONST, *truthy as u32],
             Self::Variable(var) => vec![LOAD],
+            Self::BinExpr(bin_expr) => bin_expr.code_gen(),
         }
+    }
+}
+
+impl CodeGen for BinExpr {
+    fn code_gen(&self) -> Vec<u32> {
+        let mut code = Vec::new();
+
+        code.extend(self.op1.code_gen());
+        code.extend(self.op2.code_gen());
+
+        match self.binop {
+            BinOp::Plus => code.push(IADD),
+            BinOp::Minus => code.push(ISUB),
+            BinOp::Mul => code.push(IMUL),
+            BinOp::Div => code.push(IDIV),
+        };
+
+        code
     }
 }
 

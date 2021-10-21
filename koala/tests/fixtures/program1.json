@@ -1,25 +1,21 @@
 [
   {
-    "Statement": {
-      "If": {
-        "expr": {
-          "BoolLit": true
-        },
-        "stmts": [
-          {
-            "Print": {
-              "StringLit": "Print"
-            }
+    "If": {
+      "expr": {
+        "BoolLit": true
+      },
+      "stmts": [
+        {
+          "Print": {
+            "StringLit": "Print"
           }
-        ]
-      }
+        }
+      ]
     }
   },
   {
-    "Statement": {
-      "Print": {
-        "IntLit": 2
-      }
+    "Print": {
+      "IntLit": 2
     }
   }
 ]

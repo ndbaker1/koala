@@ -5,6 +5,6 @@ authors = ["Nick Baker"]
 edition = "2018"
 
 [dependencies]
-peg = "0.7.0"
+byteorder = "1.4.3"
 serde = { version = "1.0.130", features = ['derive'] }
 serde_json = "1.0"
