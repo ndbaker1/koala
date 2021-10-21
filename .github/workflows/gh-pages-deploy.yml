@@ -14,23 +14,30 @@ jobs:
       - name: Checkout 🛎️
         uses: actions/checkout@v2.3.1
 
-      - uses: actions-rs/toolchain@v1
+      - name: Build Rust proj
+        uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-      - run: cd koala && cargo build --release --all-features
+        run: |
+          cd koala
+          cargo build --release --all-features
 
-      - uses: jetli/wasm-pack-action@v0.3.0
+      - name: Wasm Pack
+        uses: jetli/wasm-pack-action@v0.3.0
         with:
           # Optional version of wasm-pack to install(eg. 'v0.9.1', 'latest')
           version: 'latest'
-      - run: |
-          cd koala-wasm && wasm-pack --target web
+        run: |
+          cd koala-wasm
+          wasm-pack --target web
+
       - name: Install and Build
         env:
           BASE_HREF: koala
-      - run: |
+        run: |
           npm install -f
           npm run build -- --base=$BASE_HREF
+          
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@4.1.4
         with:
