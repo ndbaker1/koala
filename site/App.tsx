@@ -70,6 +70,7 @@ export default function App() {
             </Text>
             <Editor
               height={500}
+              language="python"
               value={codeRef.current}
               onChange={data => { codeRef.current = data || '' }}
               options={{ fontFamily: '"Consolas"' }} />
