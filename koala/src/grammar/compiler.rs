@@ -82,7 +82,7 @@ impl CodeGen for Expr {
                 .map(|a| a.unwrap())
                 .collect(),
             Self::BoolLit(truthy) => vec![CONST, *truthy as u32],
-            Self::Variable(var) => vec![LOAD],
+            Self::Variable(_) => vec![LOAD],
             Self::BinExpr(bin_expr) => bin_expr.code_gen(),
         }
     }

@@ -1,7 +1,7 @@
 use std::{cell::RefCell, fs, rc::Rc};
 
 use koala::{
-    grammar::{compiler::CodeGen, parser::parse},
+    grammar::compiler::CodeGen,
     instructions::{CONST, END, PRINT},
     kvm::VirtualMachine,
 };
@@ -44,27 +44,4 @@ fn kvn_stack_load_print() {
     vm.run();
 
     assert_eq!(*value.borrow(), test_value.to_string());
-}
-
-#[test]
-fn program2_test() {
-    let code = match fs::read_to_string(fixture_path("program2.json")) {
-        Ok(file_content) => file_content,
-        Err(_) => String::from(""),
-    };
-
-    let program = parse(&code);
-
-    let code = &program.code_gen();
-
-    let value = Rc::new(RefCell::new(String::new()));
-    let captured_value = value.clone();
-
-    let print_callback = &move |val: &str| *captured_value.borrow_mut() += val;
-
-    let mut vm = VirtualMachine::new(print_callback);
-    vm.load_code(code);
-    vm.run();
-
-    assert_eq!(*value.borrow(), "8");
 }

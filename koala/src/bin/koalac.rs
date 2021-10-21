@@ -2,7 +2,8 @@ use std::fs::{self, File};
 use std::io::Write;
 use std::{env::args, ffi::OsStr, path::Path};
 
-use koala::grammar::{compiler::CodeGen, parser::parse};
+use koala::grammar::compiler::CodeGen;
+use koala::grammar::parser::parse_code;
 
 fn main() -> std::io::Result<()> {
     let args: Vec<String> = args().collect();
@@ -16,26 +17,32 @@ fn main() -> std::io::Result<()> {
         };
 
         if extension == "koala" {
-            // match args.iter().any(|arg| arg == "--ast") {
-            //     true => {}
-            //     false => {}
-            // }
-            let code = match fs::read_to_string(&args[1]) {
+            let file_string = match fs::read_to_string(&args[1]) {
                 Ok(file_contents) => file_contents,
                 Err(_) => return Ok(()),
             };
 
-            let program = parse(&code);
+            let program = match parse_code(&file_string) {
+                Ok(prog) => prog,
+                Err(e) => panic!("{}", e),
+            };
 
-            let vm_code = program.code_gen();
+            if args.iter().any(|arg| arg == "--ast") {
+                let ast = serde_json::to_string_pretty(&program)?;
+                fs::write("test.kast", ast)?;
+            } else {
+                let vm_code = program.code_gen();
 
-            let mut output = File::create("test.kvm")?;
-            for inst in vm_code {
-                if let Err(e) = output.write_all(&inst.to_be_bytes()) {
-                    panic!("{}", e);
+                let mut output = File::create("test.kvm")?;
+                for inst in vm_code {
+                    output.write_all(&inst.to_be_bytes())?;
                 }
             }
+        } else {
+            eprintln!("ʕ•ᴥ• ʔ {:?} wasnt a .koala", file_path);
         }
+    } else {
+        eprintln!("ʕ •ᴥ•ʔ why no file?");
     }
 
     Ok(())

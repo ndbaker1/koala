@@ -1,31 +1,48 @@
-use crate::grammar::grammar::{FunctionDefinition, Program, Statement, TopLevel};
+use peg::{error::ParseError, str::LineCol};
 
-pub fn parse(code: &str) -> Program {
-    // Convert the JSON string back to a Point.
-    serde_json::from_str(&code).unwrap()
+use super::grammar::{Expr, Program, Statement, TopLevel};
+
+peg::parser! {
+  grammar koala_parser() for str {
+    rule number() -> u32
+        = n:$(['0'..='9']+) {? n.parse().or(Err("u32")) }
+
+    rule expr() -> Expr
+        = n:number() { Expr::IntLit(n) }
+
+    rule statement() -> Statement
+        = "print(" e:expr() ")" { Statement::Print(e) }
+
+    rule statements() -> Vec<Statement>
+        = stmt:statement() { vec![stmt] }
+
+    pub rule program() -> Program
+        = s:statements() p:program() {
+            let mut p = p;
+            p.0.extend(s
+                .into_iter()
+                .map(|stmt| TopLevel::Statement(stmt))
+                .collect::<Vec<TopLevel>>());
+            p
+        }
+    //     // / f:function_def() p:program() {  }
+    //     / function_def()
+        / s:statements() {
+            Program(
+                s
+                .into_iter()
+                .map(|stmt| TopLevel::Statement(stmt))
+                .collect()
+            )
+        }
+  }
 }
 
-// peg::parser! {
-//   grammar list_parser() for str {
-//     rule number() -> u32
-//         = n:$(['0'..='9']+) {? n.parse().or(Err("u32")) }
+pub fn parse_code(code: &str) -> Result<Program, ParseError<LineCol>> {
+    // Convert the JSON string back to a Point.
+    koala_parser::program(code)
+}
 
-//     rule statements() -> Vec<Statement>
-//         = ""  { vec![] }
-
-//     rule function_def() -> FunctionDefinition
-//         = ""  { FunctionDefinition() }
-
-//     pub rule program() -> Program
-//         = s:statements() p:program() {
-//             p.0.extend(().map(|a| TopLevel::Statement(a)));
-//             p
-//         }
-//     //     // / f:function_def() p:program() {  }
-//     //     / function_def()
-//     //     / statements()
-//   }
-// }
 //   PROGRAM
 //   = stmts:STMTS LINEEND prog:PROGRAM
 //     { return stmts.concat(prog) }
