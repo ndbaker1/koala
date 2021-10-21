@@ -1,118 +1,121 @@
 import Editor from '@monaco-editor/react'
-// @ts-ignore
-import ReactFullpage from '@fullpage/react-fullpage'
+import ReactJson from 'react-json-view'
 
-import init, { run, sourceCodeGen, parseAst } from 'koala'
-import React, { Dispatch, SetStateAction } from 'react'
+import { VscRepo, VscTerminal } from 'react-icons/vsc'
+import init, { run, sourceCodeGen, parseAst, astCodeGen } from 'koala'
+import React from 'react'
+import { Button } from '@chakra-ui/button'
+import { Box, Center, Grid, HStack, Text } from '@chakra-ui/layout'
+import { CodeExample } from './examples'
+import { SlideFade } from '@chakra-ui/transition'
 
 const repo = "https://github.com/ndbaker1/koala"
 
-function App() {
+export default function App() {
 
   React.useEffect(() => { init() }, [])
 
-  const codeRef = React.useRef("")
+  const codeRef = React.useRef(CodeExample)
   const [ast, setAst] = React.useState("")
   const vmCodeRef = React.useRef(new Uint32Array)
+  const [output, setOutput] = React.useState("")
+  const [showOutput, setShowOutput] = React.useState(true);
 
-  const environment = (): Environment => ({ codeRef, ast: [ast, setAst], vmCodeRef })
+  const outputCallback = (str: string) => setOutput(cur => cur + str)
 
   return (
-    <div className="max-w-screen-lg h-screen m-auto p-5 flex items-center justify-center">
-      <ReactFullpage
-        render={() => {
-          return (
-            <ReactFullpage.Wrapper>
-              <div className="section">
-                <Intro />
-              </div>
-              <div className="section">
-                <Playground env={environment()} />
-              </div>
-              <div className="section">
-                <SyntaxTree env={environment()} />
-              </div>
-            </ReactFullpage.Wrapper>
-          )
-        }}
-      />
-    </div>
-  )
-}
-
-export default App
-
-type Environment = {
-  codeRef: React.MutableRefObject<string>,
-  ast: [string, Dispatch<SetStateAction<string>>],
-  vmCodeRef: React.MutableRefObject<Uint32Array>
-}
-
-
-function Intro() {
-  return (
-    <div className="w-full bg-white rounded-lg shadow-lg p-10">
-      <div className="grid gap-10 md:grid-cols-2 sm:grid-cols-1">
-        <div>
-          <p className="text-5xl">
-            Koala.
-            <br />
-            <p className="text-gray-400"><b>ʕ •ᴥ•ʔ</b></p>
-          </p>
-        </div>
-        <div className="grid grid-rows-2">
-          <p className="text-xl text-justify">
-            A Simple Programming Language that runs on a Stack-based Virtual Machine all written in Rust 🦀.
-          </p>
-          <div className="flex items-center justify-center">
-            <a className="bg-gray-600 text-gray-100 rounded-lg p-3" href={repo} target="_blank" rel="noopener noreferrer">Github</a>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function Playground({ env }: { env: Environment }) {
-  return (
-    <div className="max-w-screen-lg h-screen m-auto p-5 flex items-center justify-center">
-      <div className="w-full bg-white rounded-lg p-5">
-        <Editor
-          height={500}
-          value={env.codeRef.current}
-          onChange={data => { env.codeRef.current = data || '' }} />
-        <div className="grid grid-cols-2">
-          <button onClick={() => { env.ast[1](parseAst(env.codeRef.current)) }}>Compile</button>
-          <button >Run</button>
-        </div>
-      </div>
-    </div>
-  )
-}
+    <div className="dosis-font">
+      <Center padding="2rem" height="100vh">
+        <Box borderRadius="xl" bg="white" width="container.lg" padding="2rem" shadow="2xl">
+          <Grid gap="10" templateColumns="repeat(2, 1fr)">
+            <Box fontSize="5xl" fontWeight="bold">
+              Koala.
+              <Text color="gray.500">
+                ʕ •ᴥ•ʔ
+              </Text>
+            </Box>
+            <Grid gap="10" templateRows="repeat(2, 1fr)">
+              <Text
+                fontSize="lg"
+                textAlign="justify">
+                A Simple Programming Language that runs on a Stack-based Virtual Machine all written in Rust 🦀.
+              </Text>
+              <Center>
+                <HStack>
+                  <Button as="a"
+                    href={repo}
+                    target="_blank"
+                    leftIcon={<VscRepo />}>
+                    Source Code
+                  </Button>
+                  <Button
+                    leftIcon={<VscTerminal />}
+                    onClick={() => {
+                      document.querySelector('#editor')?.scrollIntoView({ behavior: 'smooth' })
+                    }}>
+                    Try It Out
+                  </Button>
+                </HStack>
+              </Center>
+            </Grid>
+          </Grid>
+        </Box>
+      </Center>
 
 
-function SyntaxTree({ env }: { env: Environment }) {
-  return (
-    <div className="max-w-screen-lg h-screen m-auto p-5 flex items-center justify-center">
-      <div className="w-full bg-white rounded-lg p-5">
-        <Editor
-          height={500}
-          value={env.ast[0]}
-          options={{ readOnly: true }} />
-      </div>
-    </div>
-  )
-}
+      <Center id="editor" padding="2rem" height="100vh">
+        <Box borderRadius="xl" bg="white" width="container.lg" padding="1rem" shadow="2xl">
+          <Box paddingBottom="1rem">
+            <Text fontSize="xl">
+              Write Koala
+            </Text>
+            <Editor
+              height={500}
+              value={codeRef.current}
+              onChange={data => { codeRef.current = data || '' }}
+              options={{ fontFamily: '"Consolas"' }} />
+          </Box>
+          <Grid >
+            <Button onClick={() => {
+              try {
+                setAst(parseAst(codeRef.current))
+                vmCodeRef.current = sourceCodeGen(codeRef.current)
+                run(vmCodeRef.current, setOutput)
+                document.querySelector('#output')?.scrollIntoView({ behavior: 'smooth' })
+              } catch (e) {
+                alert('encountered a not yet handled grammar error!')
+              }
+            }}>Run</Button>
+          </Grid>
+        </Box>
+      </Center >
 
-function Output({ env }: { env: Environment }) {
-  return (
-    <div className="max-w-screen-lg h-screen m-auto p-5 flex items-center justify-center">
-      <div className="w-full bg-gray-500 rounded-lg p-5">
-        <Editor
-          height={500}
-          value={env.ast[0]}
-          options={{ readOnly: true }} />
-      </div>
+      {/* Output Panel */}
+      <Center id="output" padding="2rem" height="100vh">
+        <Box borderRadius="md" bg="white" width="container.lg" padding="1rem" shadow="2xl" >
+          <Grid gridTemplateRows="repeat(2,1fr)" height={500}>
+            <Box>
+              <Text textAlign="left" fontSize="xl">
+                Syntax Tree
+              </Text>
+              <hr />
+              <Box textAlign="left" overflow="auto" overscrollBehavior="contain" height={350}>
+                <ReactJson src={JSON.parse(ast || '{}')} />
+              </Box>
+              <hr />
+            </Box>
+            <Box display="flex" alignItems="end">
+              <Text textAlign="left" fontSize="xl">
+                {!!output
+                  ? <>Koala ran your code:<br />&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;💬&nbsp; {output}<br /></>
+                  : ''
+                }
+                ʕ •ᴥ•ʔ
+              </Text>
+            </Box>
+          </Grid>
+        </Box>
+      </Center>
     </div>
   )
 }
