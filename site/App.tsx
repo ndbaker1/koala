@@ -1,4 +1,7 @@
 import Editor from '@monaco-editor/react'
+// @ts-ignore
+import ReactFullpage from '@fullpage/react-fullpage'
+
 import init, { run, sourceCodeGen, parseAst } from 'koala'
 import React, { Dispatch, SetStateAction } from 'react'
 
@@ -15,11 +18,25 @@ function App() {
   const environment = (): Environment => ({ codeRef, ast: [ast, setAst], vmCodeRef })
 
   return (
-    <>
-      <Intro />
-      <Playground env={environment()} />
-      <SyntaxTree env={environment()} />
-    </>
+    <div className="max-w-screen-lg h-screen m-auto p-5 flex items-center justify-center">
+      <ReactFullpage
+        render={() => {
+          return (
+            <ReactFullpage.Wrapper>
+              <div className="section">
+                <Intro />
+              </div>
+              <div className="section">
+                <Playground env={environment()} />
+              </div>
+              <div className="section">
+                <SyntaxTree env={environment()} />
+              </div>
+            </ReactFullpage.Wrapper>
+          )
+        }}
+      />
+    </div>
   )
 }
 
@@ -31,10 +48,11 @@ type Environment = {
   vmCodeRef: React.MutableRefObject<Uint32Array>
 }
 
+
 function Intro() {
   return (
-    <div className="max-w-screen-lg h-screen m-auto p-5 flex items-center justify-center">
-      <div className="w-full bg-white rounded-lg p-10 grid gap-10 md:grid-cols-2 sm:grid-cols-1">
+    <div className="w-full bg-white rounded-lg shadow-lg p-10">
+      <div className="grid gap-10 md:grid-cols-2 sm:grid-cols-1">
         <div>
           <p className="text-5xl">
             Koala.
@@ -76,7 +94,7 @@ function Playground({ env }: { env: Environment }) {
 function SyntaxTree({ env }: { env: Environment }) {
   return (
     <div className="max-w-screen-lg h-screen m-auto p-5 flex items-center justify-center">
-      <div className="w-full bg-gray-500 rounded-lg p-5">
+      <div className="w-full bg-white rounded-lg p-5">
         <Editor
           height={500}
           value={env.ast[0]}

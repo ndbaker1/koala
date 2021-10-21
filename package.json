@@ -8,6 +8,7 @@
     "serve": "vite preview"
   },
   "dependencies": {
+    "@fullpage/react-fullpage": "^0.1.19",
     "@monaco-editor/react": "^4.2.2",
     "koala": "file:./koala-wasm/pkg",
     "monaco-editor": "^0.27.0",
