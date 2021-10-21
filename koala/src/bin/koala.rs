@@ -1,16 +1,22 @@
+use std::env::args;
+
 use koala::{
-    instructions::{END, PRINT},
+    instructions::{CONST, END, PRINT},
     kvm::VirtualMachine,
 };
 
 fn main() {
-    let code = parse_file();
+    let files: Vec<String> = args().collect();
 
-    let mut vm = VirtualMachine::new(&|msg: &str| print!("{}", msg));
-    vm.load_code(&code);
-    vm.run();
+    if files.len() > 1 {
+        let code = read_file(&files[1]);
+
+        let mut vm = VirtualMachine::new(&|msg: &str| print!("{}", msg));
+        vm.load_code(&code);
+        vm.run();
+    }
 }
 
-fn parse_file() -> Vec<u32> {
-    vec![PRINT as u32, END as u32]
+fn read_file(file: &str) -> Vec<u32> {
+    vec![CONST as u32, 1, PRINT as u32, 1, END as u32]
 }

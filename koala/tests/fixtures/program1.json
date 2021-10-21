@@ -1,0 +1,25 @@
+[
+  {
+    "Statement": {
+      "If": {
+        "expr": {
+          "BoolLit": true
+        },
+        "stmts": [
+          {
+            "Print": {
+              "StringLit": "Print"
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "Statement": {
+      "Print": {
+        "IntLit": 2
+      }
+    }
+  }
+]
