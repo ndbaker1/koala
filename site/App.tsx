@@ -2,12 +2,11 @@ import Editor from '@monaco-editor/react'
 import ReactJson from 'react-json-view'
 
 import { VscRepo, VscTerminal } from 'react-icons/vsc'
-import init, { run, sourceCodeGen, parseAst, astCodeGen } from 'koala'
+import init, { run, sourceCodeGen, parseAst } from 'koala'
 import React from 'react'
 import { Button } from '@chakra-ui/button'
 import { Box, Center, Grid, HStack, Text } from '@chakra-ui/layout'
-import { CodeExample } from './examples'
-import { SlideFade } from '@chakra-ui/transition'
+import { KoalaCodeExampe } from './examples'
 
 const repo = "https://github.com/ndbaker1/koala"
 
@@ -15,7 +14,7 @@ export default function App() {
 
   React.useEffect(() => { init() }, [])
 
-  const codeRef = React.useRef(CodeExample)
+  const codeRef = React.useRef(KoalaCodeExampe)
   const [ast, setAst] = React.useState("")
   const vmCodeRef = React.useRef(new Uint32Array)
   const [output, setOutput] = React.useState("")

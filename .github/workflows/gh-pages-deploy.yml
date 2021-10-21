@@ -28,7 +28,7 @@ jobs:
       - name: Install and Build
         env:
           BASE_HREF: koala
-        run: build.sh
+        run: sh build.sh
 
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@4.1.4
