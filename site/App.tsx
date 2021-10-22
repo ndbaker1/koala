@@ -22,18 +22,23 @@ enum KoalaState {
 
 export default function App() {
 
+  React.useEffect(() => {
+    // initialize Koala WASM
+    init()
+    // Setup out blinking Koala Timer
+    startBlinker()
+  }, [])
+
   const codeRef = React.useRef(KoalaCodeExampe)
   const [ast, setAst] = React.useState("")
   const vmCodeRef = React.useRef(new Uint32Array)
   const [output, setOutput] = React.useState("")
 
+  const outputCallback = (str: string) => setOutput(cur => cur + str)
+
   const [mainKoala, setMainKoala] = React.useState(KoalaState.open)
 
-  React.useEffect(() => {
-    // initialize Koala WASM
-    init()
-
-    // Setup out blinking Koala Timer
+  const startBlinker = () => {
     const min = 2
     const max = 8
     let blinker: NodeJS.Timeout
@@ -50,10 +55,7 @@ export default function App() {
         }
       })
     })()
-
-  }, [])
-
-  const outputCallback = (str: string) => setOutput(cur => cur + str)
+  }
 
   return (
     <div className="dosis-font">
