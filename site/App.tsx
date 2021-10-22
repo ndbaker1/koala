@@ -51,7 +51,7 @@ export default function App() {
                     This project was inspired by cross-platform languages such as Java and C#,
                     which are facilitated through VMs the Java Virtual Machine (JVM) and .NET Core.
                     <br /><br />
-                    The library is written completely in Rust 🦀, so it can be run .
+                    The library is written completely in Rust 🦀, so has been compiled to WebAssembly for this demo!
                   </Text>
                 </Center>
               </Box>
