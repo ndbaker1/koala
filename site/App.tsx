@@ -101,8 +101,7 @@ export default function App() {
                     It was created as a proof-of-concept while studying compiler design and hardware virtualization.
                     <br />
                     <br />
-                    Because the entire library is written using Rust 🦀,
-                    <br />
+                    Because the entire library is written using Rust 🦀, 
                     the compiler and runtime can be ported here using WebAssembly!
                   </Text>
                 </Center>
