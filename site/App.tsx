@@ -31,21 +31,27 @@ export default function App() {
       {/* Intro Component */}
       <Center paddingX="2rem" height="100vh">
         <Container borderRadius="xl" bg="white" maxW="container.lg" padding="2rem" shadow="2xl">
-          <Grid gap="10" templateColumns={{ md: "repeat(2, 1fr)" }}>
-            <Container fontSize="5xl" fontWeight="bold">
-              Koala.
-              <Text color="gray.500">
-                ʕ •ᴥ•ʔ
-              </Text>
-            </Container>
-            <Grid gap="10" templateRows="repeat(2, 1fr)">
+          <Grid gap="5" templateColumns={{ md: "repeat(2, 1fr)" }}>
+            <Center fontSize="5xl" fontWeight="bold">
+              <Grid gridRow="2">
+                <Text>Koala.</Text>
+                <Text color="gray.500">ʕ •ᴥ•ʔ</Text>
+              </Grid>
+            </Center>
+            <Grid gap="5" templateRows="auto 1fr">
               <Box paddingX="5">
                 <Center>
                   <Text
-                    fontSize="lg"
-                    textAlign="justify"
+                    fontSize="md"
+                    textAlign="left"
                     maxWidth="sm">
-                    A Simple Programming Language that runs on a Stack-based Virtual Machine all written in Rust 🦀.
+                    Koala is a simple programming language that runs on a stack-based virtual machine
+                    created for educational and demonastrative purposes.
+                    <br /><br />
+                    This project was inspired by cross-platform languages such as Java and C#,
+                    which are facilitated through VMs the Java Virtual Machine (JVM) and .NET Core.
+                    <br /><br />
+                    The library is written completely in Rust 🦀, so it can be run .
                   </Text>
                 </Center>
               </Box>
