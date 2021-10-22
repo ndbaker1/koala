@@ -4,7 +4,7 @@ import Editor from '@monaco-editor/react'
 import ReactJson from 'react-json-view'
 import { VscRepo, VscTerminal } from 'react-icons/vsc'
 
-import { Box, Center, Grid, HStack, Text } from '@chakra-ui/layout'
+import { Box, Center, Container, Divider, Grid, HStack, Stack, Text } from '@chakra-ui/layout'
 import { Button } from '@chakra-ui/button'
 
 import init, { run, sourceCodeGen, parseAst } from 'koala'
@@ -25,21 +25,27 @@ export default function App() {
 
   return (
     <div className="dosis-font">
-      <Center padding="2rem" height="100vh">
-        <Box borderRadius="xl" bg="white" width="container.lg" padding="2rem" shadow="2xl">
-          <Grid gap="10" templateColumns="repeat(2, 1fr)">
-            <Box fontSize="5xl" fontWeight="bold">
+      {/* Intro Component */}
+      <Center paddingX="2rem" height="100vh">
+        <Container borderRadius="xl" bg="white" maxW="container.lg" padding="2rem" shadow="2xl">
+          <Grid gap="10" templateColumns={{ md: "repeat(2, 1fr)" }}>
+            <Container fontSize="5xl" fontWeight="bold">
               Koala.
               <Text color="gray.500">
                 ʕ •ᴥ•ʔ
               </Text>
-            </Box>
+            </Container>
             <Grid gap="10" templateRows="repeat(2, 1fr)">
-              <Text
-                fontSize="lg"
-                textAlign="justify">
-                A Simple Programming Language that runs on a Stack-based Virtual Machine all written in Rust 🦀.
-              </Text>
+              <Box paddingX="5">
+                <Center>
+                  <Text
+                    fontSize="lg"
+                    textAlign="justify"
+                    maxWidth="sm">
+                    A Simple Programming Language that runs on a Stack-based Virtual Machine all written in Rust 🦀.
+                  </Text>
+                </Center>
+              </Box>
               <Center>
                 <HStack>
                   <Button as="a"
@@ -59,12 +65,12 @@ export default function App() {
               </Center>
             </Grid>
           </Grid>
-        </Box>
+        </Container>
       </Center>
 
 
       <Center id="editor" padding="2rem" height="100vh">
-        <Box borderRadius="xl" bg="white" width="container.lg" padding="1rem" shadow="2xl">
+        <Container borderRadius="xl" bg="white" maxW="container.lg" padding="1rem" shadow="2xl">
           <Box paddingBottom="1rem">
             <Text fontSize="xl">
               Write Koala
@@ -81,19 +87,20 @@ export default function App() {
               try {
                 setAst(parseAst(codeRef.current))
                 vmCodeRef.current = sourceCodeGen(codeRef.current)
-                run(vmCodeRef.current, setOutput)
+                setOutput('')
+                run(vmCodeRef.current, outputCallback)
                 document.querySelector('#output')?.scrollIntoView({ behavior: 'smooth' })
               } catch (e) {
                 alert('encountered a not yet handled grammar error!')
               }
             }}>Run</Button>
           </Grid>
-        </Box>
+        </Container>
       </Center >
 
       {/* Output Panel */}
       <Center id="output" padding="2rem" height="100vh">
-        <Box borderRadius="md" bg="white" width="container.lg" padding="1rem" shadow="2xl" >
+        <Container borderRadius="md" bg="white" maxWidth="container.lg" padding="1rem" shadow="2xl" >
           <Grid gridTemplateRows="repeat(2,1fr)" height={500}>
             <Box>
               <Text textAlign="left" fontSize="xl">
@@ -115,7 +122,7 @@ export default function App() {
               </Text>
             </Box>
           </Grid>
-        </Box>
+        </Container>
       </Center>
     </div>
   )
