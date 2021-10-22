@@ -2,7 +2,9 @@ import React from 'react'
 
 import Editor from '@monaco-editor/react'
 import ReactJson from 'react-json-view'
+
 import { VscDebugStepBack, VscRepo, VscTerminal } from 'react-icons/vsc'
+import { RiStackLine } from 'react-icons/ri'
 
 import { Box, Center, Container, Grid, HStack, Text } from '@chakra-ui/layout'
 import { Button } from '@chakra-ui/button'
@@ -13,7 +15,7 @@ import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@chakra-ui/tabs'
 
 const repo = "https://github.com/ndbaker1/koala"
 
-const windowHeightRem = "32rem"
+const windowHeightRem = "28rem"
 
 enum KoalaState {
   open = "ʕ •ᴥ•ʔ",
@@ -40,7 +42,7 @@ export default function App() {
 
   const startBlinker = () => {
     const min = 2
-    const max = 8
+    const max = 7
     let blinker: NodeJS.Timeout
     (function blink() {
       setMainKoala(state => {
@@ -73,7 +75,7 @@ export default function App() {
         >
           <Grid
             gap="5"
-            templateColumns={{ md: "1fr 4fr" }}
+            templateColumns={{ md: "1fr 3fr" }}
           >
             <Center
               fontSize="5xl"
@@ -88,19 +90,20 @@ export default function App() {
               gap="5"
               templateRows="auto 1fr"
             >
-              <Box paddingX="5">
+              <Box paddingX="2">
                 <Center>
                   <Text
                     fontSize="md"
                     textAlign="left"
                   >
-                    Koala is a simple programming language that runs on a stack-based virtual machine
-                    created for educational and demonastrative purposes.
-                    <br /><br />
-                    This project was inspired by cross-platform languages such as Java and C#,
-                    which are facilitated through VMs the Java Virtual Machine (JVM) and .NET Core.
-                    <br /><br />
-                    The library is written completely in Rust 🦀, so it has been compiled to WebAssembly for this demo!
+                    🐨 Koala is a simple programming language that runs on a stack-based virtual machine.
+                    <br />
+                    It was created as a proof-of-concept while studying compiler design and hardware virtualization.
+                    <br />
+                    <br />
+                    Because the entire library is written using Rust 🦀,
+                    <br />
+                    the compiler and runtime can be ported here using WebAssembly!
                   </Text>
                 </Center>
               </Box>
@@ -111,7 +114,7 @@ export default function App() {
                     href={repo}
                     target="_blank"
                     leftIcon={<VscRepo />}>
-                    Source Code
+                    More on Github
                   </Button>
                   <Button
                     leftIcon={<VscTerminal />}
@@ -179,100 +182,95 @@ export default function App() {
           bg="white"
           maxWidth="container.lg"
           padding="1rem"
-          shadow="2xl" >
-          <Grid
-            gridTemplateRows="repeat(2,1fr)"
-            height={windowHeightRem}
-          >
-            <Tabs>
-              <TabList>
-                <Tab>Info</Tab>
-                <Tab>Syntax Tree</Tab>
-                <Tab>Instructions (Hex)</Tab>
-              </TabList>
-              <TabPanels>
-                <TabPanel>
+          shadow="2xl"
+        >
+          <Tabs>
+            <TabList>
+              <Tab>Info</Tab>
+              <Tab>Syntax Tree</Tab>
+              <Tab>Instructions (Hex)</Tab>
+            </TabList>
+            <TabPanels>
+              <TabPanel>
+                <Box
+                  textAlign="left"
+                  overflow="auto"
+                  overscrollBehavior="contain"
+                  height={windowHeightRem}
+                >
                   <Box
-                    textAlign="left"
-                    overflow="auto"
-                    overscrollBehavior="contain"
-                    height={350}
+                    fontSize="md"
+                    maxWidth="xl"
                   >
-                    <Box
-                      fontSize="md"
-                      maxWidth="xl"
-                    >
-                      {!!output
-                        ? <>
-                          One of the local Koalas has generously compiled and run our code!<br />
-                          <br />
-                          &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;💬&nbsp; " {output} "<br />
-                          <Box textAlign="left" fontSize="xl">
-                            <Text color="gray.500" fontSize="2xl">
-                              ʕ •ᴥ•ʔ
-                            </Text>
-                          </Box>
-                          <br />
-                          This is the output of our program,
-                          but you can also view the <b>Syntax Tree</b> generated by the Language parser,
-                          and the corresponding 32bit <b>Instructions</b> (in hex) that are run by the Koala Virtual Machine.
-                        </>
-                        : <>
-                          Compile a Program!
+                    {!!output
+                      ? <>
+                        One of the local Koalas has generously compiled and run our code!<br />
+                        <br />
+                        &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;💬&nbsp; " {output} "<br />
+                        <Box textAlign="left" fontSize="xl">
                           <Text color="gray.500" fontSize="2xl">
                             ʕ •ᴥ•ʔ
                           </Text>
-                        </>
-                      }
-                    </Box>
+                        </Box>
+                        <br />
+                        This is the output of our program,
+                        but you can also view the <b>Syntax Tree</b> generated by the Language parser,
+                        and the corresponding 32bit <b>Instructions</b> (in hex) that are run by the Koala Virtual Machine.
+                      </>
+                      : <>
+                        Compile a Program!
+                        <Text color="gray.500" fontSize="2xl">
+                          ʕ •ᴥ•ʔ
+                        </Text>
+                      </>
+                    }
                   </Box>
-                </TabPanel>
-                <TabPanel>
-                  <Box
-                    textAlign="left"
-                    overflow="auto"
-                    overscrollBehavior="contain"
-                    height={350}
-                  >
-                    <ReactJson src={JSON.parse(ast || '{}')} />
-                  </Box>
-                </TabPanel>
-                <TabPanel>
-                  <Box
-                    textAlign="left"
-                    overflow="auto"
-                    overscrollBehavior="contain"
-                    height={350}
-                    fontFamily="consolas"
-                  >
-                    {vmCodeRef.current
-                      .reduce<string[]>((cur, val) => cur.concat([
-                        '0x' + val.toString(16).padStart(8, '0').toUpperCase()
-                      ]), [])
-                      .map<JSX.Element>((hex, i) => <p key={i}>{hex}</p>)}
-                  </Box>
-                </TabPanel>
-              </TabPanels>
-            </Tabs>
-            <hr />
-            <Box
-              display="flex"
-              alignItems="end"
-            >
-              <Box
-                display="flex"
-                flexDirection="column"
-              >
-                <Button
-                  maxWidth="min"
-                  leftIcon={<VscDebugStepBack />}
-                  onClick={() => {
-                    smoothScrollTo('#editor')
-                  }}>
-                  Go Back and Edit
-                </Button>
-              </Box>
-            </Box>
+                </Box>
+              </TabPanel>
+              <TabPanel>
+                <Box
+                  textAlign="left"
+                  overflow="auto"
+                  overscrollBehavior="contain"
+                  height={windowHeightRem}
+                >
+                  {/* backup base json stringify */}
+                  {/* <pre style={{ fontFamily: 'monospace' }}>{JSON.stringify(JSON.parse(ast || '{}'), null, 2)}</pre> */}
+                  <ReactJson
+                    src={JSON.parse(ast || '{}')}
+                    indentWidth={2}
+                    enableClipboard={false}
+                    displayDataTypes={false}
+                    quotesOnKeys={false}
+                  />
+                </Box>
+              </TabPanel>
+              <TabPanel>
+                <Box
+                  textAlign="left"
+                  overflow="auto"
+                  overscrollBehavior="contain"
+                  height={windowHeightRem}
+                  fontSize="lg"
+                  fontFamily="monospace"
+                >
+                  {vmCodeRef.current
+                    .reduce<string[]>((cur, val) => cur.concat([
+                      '0x' + val.toString(16).padStart(8, '0').toUpperCase()
+                    ]), [])
+                    .map<JSX.Element>((hex, i) => <p key={i}>{hex}</p>)}
+                </Box>
+              </TabPanel>
+            </TabPanels>
+          </Tabs>
+          <Grid>
+            <Button
+              leftIcon={<VscDebugStepBack />}
+              onClick={() => {
+                smoothScrollTo('#editor')
+              }}>
+              Go Back and Edit
+            </Button>
           </Grid>
         </Container>
       </Center>
