@@ -15,14 +15,43 @@ const repo = "https://github.com/ndbaker1/koala"
 
 const windowHeightRem = "32rem"
 
-export default function App() {
+enum KoalaState {
+  open = "ʕ •ᴥ•ʔ",
+  closed = "ʕ -ᴥ-ʔ",
+}
 
-  React.useEffect(() => { init() }, [])
+export default function App() {
 
   const codeRef = React.useRef(KoalaCodeExampe)
   const [ast, setAst] = React.useState("")
   const vmCodeRef = React.useRef(new Uint32Array)
   const [output, setOutput] = React.useState("")
+
+  const [mainKoala, setMainKoala] = React.useState(KoalaState.open)
+
+  React.useEffect(() => {
+    // initialize Koala WASM
+    init()
+
+    // Setup out blinking Koala Timer
+    const min = 2
+    const max = 8
+    let blinker: NodeJS.Timeout
+    (function blink() {
+      setMainKoala(state => {
+        if (state == KoalaState.open) {
+          clearInterval(blinker)
+          blinker = setTimeout(blink, 200)
+          return KoalaState.closed
+        } else {
+          clearInterval(blinker)
+          blinker = setTimeout(blink, (Math.random() * (max - min) + min) * 1000)
+          return KoalaState.open
+        }
+      })
+    })()
+
+  }, [])
 
   const outputCallback = (str: string) => setOutput(cur => cur + str)
 
@@ -50,7 +79,7 @@ export default function App() {
             >
               <Grid gridRow="2">
                 <Text>Koala.</Text>
-                <Text color="gray.500">ʕ •ᴥ•ʔ</Text>
+                <Text color="gray.500">{mainKoala}</Text>
               </Grid>
             </Center>
             <Grid
@@ -167,7 +196,7 @@ export default function App() {
                     overscrollBehavior="contain"
                     height={350}
                   >
-                    <Text
+                    <Box
                       fontSize="md"
                       maxWidth="xl"
                     >
@@ -193,7 +222,7 @@ export default function App() {
                           </Text>
                         </>
                       }
-                    </Text>
+                    </Box>
                   </Box>
                 </TabPanel>
                 <TabPanel>
@@ -218,7 +247,7 @@ export default function App() {
                       .reduce<string[]>((cur, val) => cur.concat([
                         '0x' + val.toString(16).padStart(8, '0').toUpperCase()
                       ]), [])
-                      .map<JSX.Element>(hex => <p>{hex}</p>)}
+                      .map<JSX.Element>((hex, i) => <p key={i}>{hex}</p>)}
                   </Box>
                 </TabPanel>
               </TabPanels>
