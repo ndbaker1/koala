@@ -68,7 +68,7 @@ export default function App() {
         </Container>
       </Center>
 
-
+      {/* Code Editor */}
       <Center id="editor" padding="2rem" height="100vh">
         <Container borderRadius="xl" bg="white" maxW="container.lg" padding="1rem" shadow="2xl">
           <Box paddingBottom="1rem">
@@ -102,16 +102,31 @@ export default function App() {
       <Center id="output" padding="2rem" height="100vh">
         <Container borderRadius="md" bg="white" maxWidth="container.lg" padding="1rem" shadow="2xl" >
           <Grid gridTemplateRows="repeat(2,1fr)" height={500}>
-            <Box>
-              <Text textAlign="left" fontSize="xl">
-                Syntax Tree
-              </Text>
-              <hr />
-              <Box textAlign="left" overflow="auto" overscrollBehavior="contain" height={350}>
-                <ReactJson src={JSON.parse(ast || '{}')} />
-              </Box>
-              <hr />
-            </Box>
+            <Grid gridTemplateColumns="repeat(2,1fr)">
+              {/* Syntax Tree Group */}
+              <Container>
+                <Text textAlign="left" fontSize="xl">
+                  Syntax Tree
+                </Text>
+                <hr />
+                <Box textAlign="left" overflow="auto" overscrollBehavior="contain" height={350}>
+                  <ReactJson src={JSON.parse(ast || '{}')} />
+                </Box>
+              </Container>
+              {/* VM Code Group */}
+              <Container>
+                <Text textAlign="left" fontSize="xl">
+                  Generated Code
+                </Text>
+                <hr />
+                <Box textAlign="left" overflow="auto" overscrollBehavior="contain" height={350}>
+                  {vmCodeRef.current
+                    .reduce<string[]>((cur, val) => cur.concat(['0x' + val.toString(16).padStart(8, '0')]), [])
+                    .map<JSX.Element>(val => <p>{val}</p>)}
+                </Box>
+              </Container>
+            </Grid>
+            <hr />
             <Box display="flex" alignItems="end">
               <Text textAlign="left" fontSize="xl">
                 {!!output
