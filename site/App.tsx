@@ -29,35 +29,54 @@ export default function App() {
   return (
     <div className="dosis-font">
       {/* Intro Component */}
-      <Center paddingX="2rem" height="100vh">
-        <Container borderRadius="xl" bg="white" maxW="container.lg" padding="2rem" shadow="2xl">
-          <Grid gap="5" templateColumns={{ md: "repeat(2, 1fr)" }}>
-            <Center fontSize="5xl" fontWeight="bold">
+      <Center
+        paddingX="2rem"
+        height="100vh"
+      >
+        <Container
+          borderRadius="xl"
+          bg="white"
+          maxWidth="container.lg"
+          padding="2rem"
+          shadow="2xl"
+        >
+          <Grid
+            gap="5"
+            templateColumns={{ md: "1fr 4fr" }}
+          >
+            <Center
+              fontSize="5xl"
+              fontWeight="bold"
+            >
               <Grid gridRow="2">
                 <Text>Koala.</Text>
                 <Text color="gray.500">ʕ •ᴥ•ʔ</Text>
               </Grid>
             </Center>
-            <Grid gap="5" templateRows="auto 1fr">
+            <Grid
+              gap="5"
+              templateRows="auto 1fr"
+            >
               <Box paddingX="5">
                 <Center>
                   <Text
                     fontSize="md"
                     textAlign="left"
-                    maxWidth="sm">
+                  >
                     Koala is a simple programming language that runs on a stack-based virtual machine
                     created for educational and demonastrative purposes.
                     <br /><br />
                     This project was inspired by cross-platform languages such as Java and C#,
                     which are facilitated through VMs the Java Virtual Machine (JVM) and .NET Core.
                     <br /><br />
-                    The library is written completely in Rust 🦀, so has been compiled to WebAssembly for this demo!
+                    The library is written completely in Rust 🦀, so it has been compiled to WebAssembly for this demo!
                   </Text>
                 </Center>
               </Box>
               <Center>
                 <HStack>
-                  <Button as="a"
+                  <Button
+                    as="a"
                     href={repo}
                     target="_blank"
                     leftIcon={<VscRepo />}>
@@ -78,8 +97,18 @@ export default function App() {
       </Center>
 
       {/* Code Editor */}
-      <Center id="editor" padding="2rem" height="100vh">
-        <Container borderRadius="xl" bg="white" maxW="container.lg" padding="1rem" shadow="2xl">
+      <Center
+        id="editor"
+        padding="2rem"
+        height="100vh"
+      >
+        <Container
+          borderRadius="xl"
+          bg="white"
+          maxW="container.lg"
+          padding="1rem"
+          shadow="2xl"
+        >
           <Box paddingBottom="1rem">
             <Text fontSize="xl">
               Write Koala
@@ -89,9 +118,10 @@ export default function App() {
               language="python"
               value={codeRef.current}
               onChange={data => { codeRef.current = data || '' }}
-              options={{ fontFamily: '"Consolas"' }} />
+              options={{ fontFamily: '"Consolas"' }}
+            />
           </Box>
-          <Grid >
+          <Grid>
             <Button onClick={() => {
               try {
                 setAst(parseAst(codeRef.current))
@@ -108,9 +138,21 @@ export default function App() {
       </Center >
 
       {/* Output Panel */}
-      <Center id="output" padding="2rem" height="100vh">
-        <Container borderRadius="md" bg="white" maxWidth="container.lg" padding="1rem" shadow="2xl" >
-          <Grid gridTemplateRows="repeat(2,1fr)" height={windowHeightRem}>
+      <Center
+        id="output"
+        padding="2rem"
+        height="100vh"
+      >
+        <Container
+          borderRadius="md"
+          bg="white"
+          maxWidth="container.lg"
+          padding="1rem"
+          shadow="2xl" >
+          <Grid
+            gridTemplateRows="repeat(2,1fr)"
+            height={windowHeightRem}
+          >
             <Tabs>
               <TabList>
                 <Tab>Info</Tab>
@@ -119,33 +161,59 @@ export default function App() {
               </TabList>
               <TabPanels>
                 <TabPanel>
-                  <Box textAlign="left" overflow="auto" overscrollBehavior="contain" height={350}>
-                    <Text fontSize="md" maxWidth="xl">
-                      One of the local Koalas has generously compiled and run our code!<br />
-                      <br />
-                      <Box textAlign="left" fontSize="xl">
-                        {!!output
-                          ? <>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;💬&nbsp; " {output} "<br /></>
-                          : ''
-                        }
-                        <Text color="gray.500" fontSize="2xl">
-                          ʕ •ᴥ•ʔ
-                        </Text>
-                      </Box>
-                      <br />
-                      This is the output of our program,
-                      but you can also view the <b>Syntax Tree</b> generated by the Language parser,
-                      and the corresponding 32bit <b>Instructions</b> (in hex) that are run by the Koala Virtual Machine.
+                  <Box
+                    textAlign="left"
+                    overflow="auto"
+                    overscrollBehavior="contain"
+                    height={350}
+                  >
+                    <Text
+                      fontSize="md"
+                      maxWidth="xl"
+                    >
+                      {!!output
+                        ? <>
+                          One of the local Koalas has generously compiled and run our code!<br />
+                          <br />
+                          &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;💬&nbsp; " {output} "<br />
+                          <Box textAlign="left" fontSize="xl">
+                            <Text color="gray.500" fontSize="2xl">
+                              ʕ •ᴥ•ʔ
+                            </Text>
+                          </Box>
+                          <br />
+                          This is the output of our program,
+                          but you can also view the <b>Syntax Tree</b> generated by the Language parser,
+                          and the corresponding 32bit <b>Instructions</b> (in hex) that are run by the Koala Virtual Machine.
+                        </>
+                        : <>
+                          Compile a Program!
+                          <Text color="gray.500" fontSize="2xl">
+                            ʕ •ᴥ•ʔ
+                          </Text>
+                        </>
+                      }
                     </Text>
                   </Box>
                 </TabPanel>
                 <TabPanel>
-                  <Box textAlign="left" overflow="auto" overscrollBehavior="contain" height={350}>
+                  <Box
+                    textAlign="left"
+                    overflow="auto"
+                    overscrollBehavior="contain"
+                    height={350}
+                  >
                     <ReactJson src={JSON.parse(ast || '{}')} />
                   </Box>
                 </TabPanel>
                 <TabPanel>
-                  <Box textAlign="left" overflow="auto" overscrollBehavior="contain" height={350} fontFamily="consolas">
+                  <Box
+                    textAlign="left"
+                    overflow="auto"
+                    overscrollBehavior="contain"
+                    height={350}
+                    fontFamily="consolas"
+                  >
                     {vmCodeRef.current
                       .reduce<string[]>((cur, val) => cur.concat([
                         '0x' + val.toString(16).padStart(8, '0').toUpperCase()
@@ -156,9 +224,14 @@ export default function App() {
               </TabPanels>
             </Tabs>
             <hr />
-            <Box display="flex" alignItems="end">
-              <Box display="flex" flexDirection="column">
-
+            <Box
+              display="flex"
+              alignItems="end"
+            >
+              <Box
+                display="flex"
+                flexDirection="column"
+              >
                 <Button
                   maxWidth="min"
                   leftIcon={<VscDebugStepBack />}
