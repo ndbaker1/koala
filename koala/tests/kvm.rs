@@ -1,14 +1,9 @@
-use std::{cell::RefCell, fs, rc::Rc};
+use std::{cell::RefCell, rc::Rc};
 
 use koala::{
-    grammar::compiler::CodeGen,
     instructions::{CONST, END, PRINT},
     kvm::VirtualMachine,
 };
-
-use crate::utils::fixture_path;
-
-mod utils;
 
 #[test]
 fn kvm_output_callback_modify_values() {

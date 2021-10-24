@@ -1,4 +1,6 @@
-use koala::grammar::compiler::CodeGen;
+use std::collections::HashMap;
+
+use koala::grammar::compiler::{CodeGen, CompilerContext};
 use koala::grammar::grammar::Program;
 use koala::grammar::parser::parse_code;
 use koala::kvm::VirtualMachine;
@@ -50,7 +52,7 @@ pub fn astCodeGen(ast_string: &str) -> Vec<u32> {
         Err(e) => panic!("{}", e),
     };
 
-    program.code_gen()
+    program.code_gen(&mut CompilerContext::new(), 0)
 }
 
 #[wasm_bindgen]

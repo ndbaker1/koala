@@ -3,7 +3,7 @@ mod processor;
 
 use memory::Memory;
 use processor::Processor;
-use std::env;
+use std::{env, panic};
 
 use crate::instructions::{self};
 
@@ -58,16 +58,18 @@ impl VirtualMachine<'_> {
                 self.running = false;
             }
             instructions::CONST => {
+                // Fetch the value to Load onto the Stack
                 self.fetch();
-                self.memory.stack.push(self.processor.ip as i32);
+                // Push the immediate Value
+                self.memory.data_stack.push(self.processor.ip as i32);
             }
             instructions::IADD | instructions::IMUL | instructions::ISUB | instructions::IDIV => {
-                let first = match self.memory.stack.pop() {
+                let first = match self.memory.data_stack.pop() {
                     Some(val) => val,
                     None => return,
                 };
 
-                let second = match self.memory.stack.pop() {
+                let second = match self.memory.data_stack.pop() {
                     Some(val) => val,
                     None => return,
                 };
@@ -80,15 +82,15 @@ impl VirtualMachine<'_> {
                     _ => return,
                 };
 
-                self.memory.stack.push(result);
+                self.memory.data_stack.push(result);
             }
             instructions::FADD | instructions::FMUL | instructions::FSUB | instructions::FDIV => {
-                let first: f32 = match self.memory.stack.pop() {
+                let first: f32 = match self.memory.data_stack.pop() {
                     Some(val) => val as f32,
                     None => return,
                 };
 
-                let second: f32 = match self.memory.stack.pop() {
+                let second: f32 = match self.memory.data_stack.pop() {
                     Some(val) => val as f32,
                     None => return,
                 };
@@ -101,33 +103,69 @@ impl VirtualMachine<'_> {
                     _ => return,
                 };
 
-                self.memory.stack.push(result as i32);
+                self.memory.data_stack.push(result as i32);
             }
             instructions::JUMP => {
+                // Fetch the address to Jump to
                 self.fetch();
+                // Move the Instruction Pointer to the Address
                 self.processor.pc = self.processor.ip as usize;
             }
-            instructions::BEQ => {}
-            instructions::BNE => {}
-            instructions::CALL => {}
-            instructions::RET => {}
+            instructions::BEQZ | instructions::BNEZ => match self.memory.data_stack.len() >= 1 {
+                true => {
+                    // cache instruction pointer for after the address fetch
+                    let opcode = self.processor.ip;
+                    // Fetch the address to jump to when value not equal
+                    self.fetch();
+                    // Compare the top of the stack to 0
+                    let val = self.memory.data_stack.pop().unwrap() as u32;
+                    let cond = match opcode {
+                        instructions::BEQZ => val == 0,
+                        instructions::BNEZ => val != 0,
+                        _ => panic!("impossible path."),
+                    };
+
+                    if cond {
+                        self.processor.pc = self.processor.ip as usize;
+                    }
+                }
+                false => panic!("not enough arguments on stack to do BEQZ."),
+            },
+            instructions::CALL => {
+                // Fetch the address of the call
+                self.fetch();
+                // Push the return address onto the Call Stack
+                self.memory.call_stack.push(self.processor.pc as i32);
+                // Move the Instruction Pointer to the address of the Function
+                self.processor.pc = self.processor.ip as usize;
+            }
+            instructions::RET => {
+                // Move the Program Counter back to the previous address
+                // by popping from the Call Stack
+                self.processor.pc = match self.memory.call_stack.pop() {
+                    Some(addr) => addr as usize,
+                    None => panic!("no return address found!"),
+                };
+            }
             instructions::PUSH => {
                 self.processor.sp += 1;
+                self.fetch();
+                self.memory.data_stack.push(self.processor.ip as i32);
             }
             instructions::POP => {
-                self.memory.stack.pop();
+                self.memory.data_stack.pop();
                 self.processor.sp -= 1;
             }
             instructions::PRINT => {
                 self.fetch();
-                match self.processor.ip {
-                    1 => self.print(&self.memory.stack[0].to_string()),
-                    2 => match char::from_u32(self.memory.stack[0] as u32) {
-                        Some(letter) => self.print(&letter.to_string()),
-                        None => {}
-                    },
-                    _ => {}
-                }
+                let val = self.memory.data_stack.pop().unwrap();
+                let msg = match self.processor.ip {
+                    1 => val.to_string(),
+                    _ => char::from_u32(val as u32)
+                        .unwrap_or_else(|| panic!("bad character parsing in print!"))
+                        .to_string(),
+                };
+                self.print(&msg);
             }
             _ => { /* no-op */ }
         };

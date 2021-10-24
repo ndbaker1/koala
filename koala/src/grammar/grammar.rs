@@ -1,23 +1,19 @@
 use serde::{Deserialize, Serialize};
 
 /// Program:
-/// | TopLevel Program
+/// | FunctionDefinition Program
 /// | ε
+///
+/// the main() function will be the entry
 #[derive(Deserialize, Serialize)]
-pub struct Program(pub Vec<TopLevel>);
+pub struct Program(pub Vec<FunctionDefinition>);
 
-/// TopLevel:
-/// | FunctionDefinition
-/// | Statement
 #[derive(Deserialize, Serialize)]
-#[serde(untagged)]
-pub enum TopLevel {
-    FunctionDefinition(FunctionDefinition),
-    Statement(Statement),
+pub struct FunctionDefinition {
+    pub id: String,
+    pub args: Vec<String>,
+    pub body: Vec<Statement>,
 }
-
-#[derive(Deserialize, Serialize)]
-pub struct FunctionDefinition();
 
 /// Statement:
 /// | If
@@ -88,6 +84,7 @@ pub enum Expr {
     IntLit(u32),
     Variable(Variable),
     BinExpr(Box<BinExpr>),
+    FunctionCall { id: String, args: Vec<Expr> },
 }
 
 #[derive(Deserialize, Serialize)]

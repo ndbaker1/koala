@@ -1,8 +1,9 @@
+use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::Write;
 use std::{env::args, ffi::OsStr, path::Path};
 
-use koala::grammar::compiler::CodeGen;
+use koala::grammar::compiler::{CodeGen, CompilerContext};
 use koala::grammar::parser::parse_code;
 
 fn main() -> std::io::Result<()> {
@@ -31,7 +32,7 @@ fn main() -> std::io::Result<()> {
                 let ast = serde_json::to_string_pretty(&program)?;
                 fs::write("test.kast", ast)?;
             } else {
-                let vm_code = program.code_gen();
+                let vm_code = program.code_gen(&mut CompilerContext::new(), 0);
 
                 let mut output = File::create("test.kvm")?;
                 for inst in vm_code {

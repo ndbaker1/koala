@@ -1,5 +1,7 @@
 
-export const KoalaCodeExampe = `print(2+5)`
+export const KoalaCodeExampe = `fn main() {
+  print(2+5)
+}`
 
 export const CodeExample = `fun main() {
   number = 22

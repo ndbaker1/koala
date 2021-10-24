@@ -1,23 +1,25 @@
 use std::collections::HashMap;
 
 pub struct Memory {
-    pub stack: Vec<i32>,
-    pub ram: HashMap<usize, i32>,
+    pub data_stack: Vec<i32>,
+    pub global_storage: HashMap<usize, i32>,
+    pub call_stack: Vec<i32>,
 }
 
 impl Memory {
     pub fn new() -> Memory {
         Memory {
-            stack: Vec::new(),
-            ram: HashMap::new(),
+            data_stack: Vec::new(),
+            call_stack: Vec::new(),
+            global_storage: HashMap::new(),
         }
     }
 
     pub fn read(&self, address: &usize) -> i32 {
-        self.ram[address]
+        self.global_storage[address]
     }
 
     pub fn write(&mut self, address: &usize, value: i32) {
-        self.ram.insert(*address, value);
+        self.global_storage.insert(*address, value);
     }
 }
