@@ -2,15 +2,15 @@ use std::collections::HashMap;
 
 pub struct Memory {
     pub data_stack: Vec<i32>,
-    pub global_storage: HashMap<usize, i32>,
     pub call_stack: Vec<i32>,
+    global_storage: HashMap<usize, i32>,
 }
 
 impl Memory {
     pub fn new() -> Memory {
         Memory {
             data_stack: Vec::new(),
-            call_stack: Vec::new(),
+            call_stack: Vec::with_capacity(200),
             global_storage: HashMap::new(),
         }
     }

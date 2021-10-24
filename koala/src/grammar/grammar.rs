@@ -31,7 +31,7 @@ pub enum Statement {
     Print(Expr),
     Return,
     ReturnExpr(Expr),
-    Assignment { var: Variable, expr: Expr },
+    Assignment { id: String, expr: Expr },
     FunctionCall(FunctionCall),
 }
 
@@ -83,7 +83,7 @@ pub enum Expr {
     BoolLit(bool),
     StringLit(String),
     IntLit(u32),
-    Variable(Variable),
+    Variable(String),
     BinExpr(Box<BinExpr>),
     FunctionCall(FunctionCall),
 }
@@ -102,11 +102,6 @@ pub enum BinOp {
     Div,
     Mul,
 }
-
-/// Variable:
-/// | identifier
-#[derive(Deserialize, Serialize)]
-pub struct Variable(pub String);
 
 #[derive(Deserialize, Serialize)]
 pub struct FunctionCall {

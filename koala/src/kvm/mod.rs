@@ -30,10 +30,8 @@ impl VirtualMachine<'_> {
     }
 
     pub fn load_code(&mut self, code: &[u32]) {
-        let mut address = 0;
-        for instruction in code {
-            self.memory.write(&address, *instruction as i32);
-            address += 1;
+        for (index, instruction) in code.iter().enumerate() {
+            self.memory.write(&index, *instruction as i32);
         }
     }
 
@@ -134,6 +132,8 @@ impl VirtualMachine<'_> {
             instructions::CALL => {
                 // Fetch the address of the call
                 self.fetch();
+                // Push space for a return value
+                self.memory.call_stack.push(0);
                 // Push the return address onto the Call Stack
                 self.memory.call_stack.push(self.processor.pc as i32);
                 // Move the Instruction Pointer to the address of the Function
@@ -166,6 +166,25 @@ impl VirtualMachine<'_> {
                         .to_string(),
                 };
                 self.print(&msg);
+            }
+            instructions::LOAD => {
+                self.fetch();
+                self.memory
+                    .data_stack
+                    .push(self.memory.call_stack[self.processor.fp - self.processor.ip as usize]);
+            }
+            instructions::STORE => {
+                self.fetch();
+                self.memory.call_stack[self.processor.fp - self.processor.ip as usize] =
+                    match self.memory.data_stack.pop() {
+                        Some(val) => val,
+                        None => panic!("no value on stack"),
+                    };
+            }
+            instructions::FPMV => {
+                self.fetch();
+                // Move frame pointer
+                self.processor.fp = (self.processor.fp as i32 + self.processor.ip as i32) as usize;
             }
             _ => { /* no-op */ }
         };

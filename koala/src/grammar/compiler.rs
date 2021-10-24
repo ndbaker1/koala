@@ -2,13 +2,15 @@ use super::grammar::{
     BinExpr, BinOp, Expr, FunctionCall, FunctionDefinition, If, Program, Statement, When, WhenCase,
     WhenElse,
 };
-use crate::instructions::{BEQZ, CALL, CONST, END, IADD, IDIV, IMUL, ISUB, LOAD, PRINT, RET};
+use crate::instructions::{
+    BEQZ, CALL, CONST, END, IADD, IDIV, IMUL, ISUB, LOAD, POP, PRINT, RET, STORE,
+};
 use std::collections::HashMap;
 
 pub struct CompilerContext {
     pub fn_map: HashMap<String, usize>,
     pub var_map: HashMap<String, usize>,
-    pub var_scope: Vec<HashMap<String, usize>>,
+    pub var_scope: Vec<Vec<String>>,
 }
 impl CompilerContext {
     pub fn new() -> CompilerContext {
@@ -65,14 +67,23 @@ impl CodeGen for FunctionDefinition {
                 context.fn_map.insert(self.id.clone(), start_addr);
 
                 let mut code = Vec::new();
-                // create a temporary offset reference for statements inside the body
-                for (i, arg) in self.args.iter().enumerate() {
-                    context.var_map.insert(arg.clone(), i);
+
+                let mut new_scope = Vec::new();
+                for (index, arg) in self.args.iter().enumerate() {
+                    // expect the values to be on the stack from FunctionCall,
+                    // and then move them into call stack
+                    code.extend([STORE, index as u32, POP]);
+                    // set variable in scope for lookups
+                    new_scope.push(arg.clone());
                 }
+                // push new scope
+                context.var_scope.push(new_scope);
                 for stmt in &self.body {
                     code.extend(stmt.code_gen(context, start_addr + code.len() + 1));
                 }
-                context.var_map.clear();
+                // pop new scope
+                context.var_scope.pop();
+                // return to caller
                 code.extend([RET]);
 
                 return code;
@@ -91,19 +102,34 @@ impl CodeGen for Statement {
                 .chain([PRINT, 1].iter())
                 .cloned()
                 .collect(),
-            Self::Assignment { var, expr } => {
-                let code = expr.code_gen(context, start_addr);
+            Self::Assignment { id, expr } => {
+                let mut code = expr.code_gen(context, start_addr);
 
                 /*
                  * This functions as a part of Semantic analysis,
                  * Since we can determine if we are using an undefined varaible later on
                  */
-                // context.var_map.insert(var.0.clone());
+                if let Some(scope) = context.var_scope.last_mut() {
+                    match scope.into_iter().position(|var| var == id) {
+                        Some(var_offset) => code.extend([STORE, var_offset as u32, POP]),
+                        None => {
+                            scope.push(id.clone());
+                            code.extend([STORE, scope.len() as u32, POP]);
+                        }
+                    }
+                }
 
                 return code;
             }
             Self::FunctionCall(func_call) => func_call.code_gen(context, start_addr),
             Self::If(if_data) => if_data.code_gen(context, start_addr),
+            Self::Return => vec![RET],
+            Self::ReturnExpr(expr) => expr
+                .code_gen(context, start_addr)
+                .iter()
+                .chain([RET].iter())
+                .cloned()
+                .collect(),
             _ => Vec::new(),
         }
     }
@@ -150,6 +176,7 @@ impl CodeGen for Expr {
     fn code_gen(&self, context: &mut CompilerContext, start_addr: usize) -> Vec<u32> {
         match self {
             Self::IntLit(int) => vec![CONST, *int],
+            Self::BoolLit(truthy) => vec![CONST, *truthy as u32],
             Self::StringLit(string) => string // TODO
                 .chars()
                 .into_iter()
@@ -157,12 +184,17 @@ impl CodeGen for Expr {
                 .take_while(|a| a.is_some())
                 .map(|a| a.unwrap())
                 .collect(),
-            Self::BoolLit(truthy) => vec![CONST, *truthy as u32],
             Self::Variable(name) => vec![
                 LOAD,
-                match context.var_map.get(&name.0) {
-                    Some(val) => *val as u32,
-                    None => panic!("usage of undefined variable! '{}'", name.0),
+                match context
+                    .var_scope
+                    .last()
+                    .unwrap()
+                    .iter()
+                    .position(|var| var == name)
+                {
+                    Some(index) => (index) as u32,
+                    None => panic!("usage of undefined variable! '{}'", name),
                 },
             ],
             Self::FunctionCall(func_call) => func_call.code_gen(context, start_addr),
@@ -192,8 +224,9 @@ impl CodeGen for BinExpr {
 impl CodeGen for FunctionCall {
     fn code_gen(&self, context: &mut CompilerContext, start_addr: usize) -> Vec<u32> {
         let mut code = Vec::new();
-        for arg in &self.args {
-            code.extend(arg.code_gen(context, start_addr + code.len() + 1));
+
+        for (index, arg) in self.args.iter().enumerate() {
+            code.extend(arg.code_gen(context, start_addr + code.len()));
         }
         code.extend([
             CALL,
@@ -202,6 +235,7 @@ impl CodeGen for FunctionCall {
                 None => panic!("No function found to jump to"),
             },
         ]);
+
         return code;
     }
 }
