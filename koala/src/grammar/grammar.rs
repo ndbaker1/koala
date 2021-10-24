@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 /// | FunctionDefinition Program
 /// | ε
 ///
-/// the main() function will be the entry
+/// the main() function will be the entrypoint
 #[derive(Deserialize, Serialize)]
 pub struct Program(pub Vec<FunctionDefinition>);
 
@@ -32,6 +32,7 @@ pub enum Statement {
     Return,
     ReturnExpr(Expr),
     Assignment { var: Variable, expr: Expr },
+    FunctionCall(FunctionCall),
 }
 
 /// If:
@@ -84,7 +85,7 @@ pub enum Expr {
     IntLit(u32),
     Variable(Variable),
     BinExpr(Box<BinExpr>),
-    FunctionCall { id: String, args: Vec<Expr> },
+    FunctionCall(FunctionCall),
 }
 
 #[derive(Deserialize, Serialize)]
@@ -101,7 +102,14 @@ pub enum BinOp {
     Div,
     Mul,
 }
+
 /// Variable:
 /// | identifier
 #[derive(Deserialize, Serialize)]
 pub struct Variable(pub String);
+
+#[derive(Deserialize, Serialize)]
+pub struct FunctionCall {
+    pub id: String,
+    pub args: Vec<Expr>,
+}

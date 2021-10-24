@@ -275,9 +275,7 @@ export default function App() {
                   height={windowHeightRem}
                   fontFamily="monospace"
                   value={vmCodeRef.current
-                    .reduce<string[]>((cur, val) => cur.concat([
-                      '0x' + val.toString(16).padStart(8, '0').toUpperCase()
-                    ]), [])
+                    .reduce<string[]>((cur, val) => cur.concat(['0x' + val.toString(16).padStart(8, '0').toUpperCase()]), [])
                     .join("\n")
                   }
                 />

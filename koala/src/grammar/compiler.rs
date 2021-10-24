@@ -1,5 +1,6 @@
 use super::grammar::{
-    BinExpr, BinOp, Expr, FunctionDefinition, If, Program, Statement, When, WhenCase, WhenElse,
+    BinExpr, BinOp, Expr, FunctionCall, FunctionDefinition, If, Program, Statement, When, WhenCase,
+    WhenElse,
 };
 use crate::instructions::{BEQZ, CALL, CONST, END, IADD, IDIV, IMUL, ISUB, LOAD, PRINT, RET};
 use std::collections::HashMap;
@@ -101,6 +102,7 @@ impl CodeGen for Statement {
 
                 return code;
             }
+            Self::FunctionCall(func_call) => func_call.code_gen(context, start_addr),
             Self::If(if_data) => if_data.code_gen(context, start_addr),
             _ => Vec::new(),
         }
@@ -163,20 +165,7 @@ impl CodeGen for Expr {
                     None => panic!("usage of undefined variable! '{}'", name.0),
                 },
             ],
-            Self::FunctionCall { id, args } => {
-                let mut code = Vec::new();
-                for arg in args {
-                    code.extend(arg.code_gen(context, start_addr + code.len() + 1));
-                }
-                code.extend([
-                    CALL,
-                    match context.fn_map.get(id) {
-                        Some(addr) => *addr as u32,
-                        None => panic!("No function found to jump to"),
-                    },
-                ]);
-                return code;
-            }
+            Self::FunctionCall(func_call) => func_call.code_gen(context, start_addr),
             Self::BinExpr(bin_expr) => bin_expr.code_gen(context, start_addr),
         }
     }
@@ -196,6 +185,23 @@ impl CodeGen for BinExpr {
             BinOp::Div => code.push(IDIV),
         };
 
+        return code;
+    }
+}
+
+impl CodeGen for FunctionCall {
+    fn code_gen(&self, context: &mut CompilerContext, start_addr: usize) -> Vec<u32> {
+        let mut code = Vec::new();
+        for arg in &self.args {
+            code.extend(arg.code_gen(context, start_addr + code.len() + 1));
+        }
+        code.extend([
+            CALL,
+            match context.fn_map.get(&self.id) {
+                Some(addr) => *addr as u32,
+                None => panic!("No function found to jump to"),
+            },
+        ]);
         return code;
     }
 }

@@ -1,4 +1,6 @@
-use super::grammar::{BinExpr, BinOp, Expr, FunctionDefinition, If, Program, Statement};
+use super::grammar::{
+    BinExpr, BinOp, Expr, FunctionCall, FunctionDefinition, If, Program, Statement,
+};
 use peg::{error::ParseError, str::LineCol};
 use std::vec;
 
@@ -23,7 +25,7 @@ peg::parser! {
             / s:string() { Expr::StringLit(s) }
 
         rule binexpr() -> BinExpr
-            = n:number() op:binop() e:expr() { BinExpr { binop: op, op2: Expr::IntLit(n), op1: e } }
+            = n:number() _ op:binop() _ e:expr() { BinExpr { binop: op, op2: Expr::IntLit(n), op1: e } }
 
         rule binop() -> BinOp
             = "*" { BinOp::Mul }
@@ -31,16 +33,18 @@ peg::parser! {
             / "+" { BinOp::Plus }
             / "-" { BinOp::Minus }
 
+        rule function_call() -> FunctionCall
+            = id:identifier() "()" { FunctionCall { id, args: vec![] } }
+
         rule statement() -> Statement
-            = "print(" _ e:expr() _ ")" {
-                Statement::Print(e)
-            }
+            = "print(" _ e:expr() _ ")" { Statement::Print(e) }
             / "if" _ expr:expr() _ "{" stmts:statements() "}" {
                 Statement::If(Box::new(If {
                     expr,
                     stmts,
                 }))
             }
+            / f:function_call() { Statement::FunctionCall(f) }
 
         rule statements() -> Vec<Statement>
             = _ stmt:statement() _ stmts:statements() {
@@ -135,7 +139,6 @@ fn multiple_fn_test() {
     };
 }
 
-
 #[test]
 fn if_test() {
     let code = "
@@ -143,6 +146,22 @@ fn if_test() {
       if 3 {
           print(3)
       }
+    }
+    ";
+    match koala_parser::program(code) {
+        Ok(program) => program,
+        Err(error) => panic!("{}", error),
+    };
+}
+
+#[test]
+fn recursion_test() {
+    let code = "
+    fn main() {
+        recurse()
+    }
+    fn recurse() {
+        recurse() 
     }
     ";
     match koala_parser::program(code) {

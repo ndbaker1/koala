@@ -51,7 +51,7 @@ impl VirtualMachine<'_> {
     }
 
     pub fn execute(&mut self) {
-        debug(&format!("executing instruvtion: {}", self.processor.ip));
+        debug(&format!("executing instruction: {}", self.processor.ip));
 
         match self.processor.ip {
             instructions::END => {
