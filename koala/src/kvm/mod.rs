@@ -49,7 +49,15 @@ impl VirtualMachine<'_> {
     }
 
     pub fn execute(&mut self) {
-        debug(&format!("executing instruction: {}", self.processor.ip));
+        if true {
+            self.print(&format!(
+                "PC: {}, IP: {}, FP: {}, stack: {:?}\n",
+                self.processor.pc - 1,
+                self.processor.ip,
+                self.processor.fp,
+                self.memory.data_stack
+            ));
+        }
 
         match self.processor.ip {
             instructions::END => {
@@ -132,8 +140,6 @@ impl VirtualMachine<'_> {
             instructions::CALL => {
                 // Fetch the address of the call
                 self.fetch();
-                // Push space for a return value
-                self.memory.call_stack.push(0);
                 // Push the return address onto the Call Stack
                 self.memory.call_stack.push(self.processor.pc as i32);
                 // Move the Instruction Pointer to the address of the Function
@@ -148,13 +154,11 @@ impl VirtualMachine<'_> {
                 };
             }
             instructions::PUSH => {
-                self.processor.sp += 1;
                 self.fetch();
                 self.memory.data_stack.push(self.processor.ip as i32);
             }
             instructions::POP => {
                 self.memory.data_stack.pop();
-                self.processor.sp -= 1;
             }
             instructions::PRINT => {
                 self.fetch();
@@ -171,20 +175,25 @@ impl VirtualMachine<'_> {
                 self.fetch();
                 self.memory
                     .data_stack
-                    .push(self.memory.call_stack[self.processor.fp - self.processor.ip as usize]);
+                    .push(self.memory.data_stack[self.processor.fp + (self.processor.ip as usize)]);
             }
             instructions::STORE => {
                 self.fetch();
-                self.memory.call_stack[self.processor.fp - self.processor.ip as usize] =
+                self.memory.data_stack[self.processor.fp - self.processor.ip as usize] =
                     match self.memory.data_stack.pop() {
                         Some(val) => val,
                         None => panic!("no value on stack"),
                     };
             }
-            instructions::FPMV => {
-                self.fetch();
+            instructions::FP_MOVE => {
                 // Move frame pointer
-                self.processor.fp = (self.processor.fp as i32 + self.processor.ip as i32) as usize;
+                self.processor.fp = self.memory.data_stack.pop().unwrap() as usize;
+            }
+            instructions::SP_READ => {
+                // Push stack pointer onto stack
+                self.memory
+                    .data_stack
+                    .push((self.memory.data_stack.len()) as i32);
             }
             _ => { /* no-op */ }
         };

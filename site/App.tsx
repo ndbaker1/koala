@@ -102,7 +102,7 @@ export default function App() {
                     It was created as a proof-of-concept while studying compiler design and hardware virtualization.
                     <br />
                     <br />
-                    Because the entire library is written using Rust 🦀, 
+                    Because the entire library is written using Rust 🦀,
                     the compiler and runtime can be ported here using WebAssembly!
                   </Text>
                 </Center>
@@ -275,6 +275,7 @@ export default function App() {
                   fontFamily="monospace"
                   value={vmCodeRef.current
                     .reduce<string[]>((cur, val) => cur.concat(['0x' + val.toString(16).padStart(8, '0').toUpperCase()]), [])
+                    .map((inst, index) => index.toString().padStart(4, ' ') + '│' + inst)
                     .join("\n")
                   }
                 />

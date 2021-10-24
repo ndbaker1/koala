@@ -47,7 +47,6 @@ peg::parser! {
         rule expr() -> Expr
             = "(" _ op1:expr() _ binop:binop() _ op2:expr() _ ")" { Expr::BinExpr(Box::new(BinExpr { binop, op2, op1 })) }
             / "(" _ expr:expr() _ ")" { expr }
-            / s:string() { Expr::StringLit(s) }
             / "true" { Expr::BoolLit(true) }
             / "false" { Expr::BoolLit(false) }
             / f:function_call() { Expr::FunctionCall(f) }
@@ -65,7 +64,7 @@ peg::parser! {
             / "return" _ expr:expr() { Statement::ReturnExpr(expr) }
             / "return" { Statement::Return }
             / f:function_call() { Statement::FunctionCall(f) }
-            / "let " _ id:identifier() _ "=" _ expr:expr() { Statement::Assignment { id, expr } }
+            / "let "? _ id:identifier() _ "=" _ expr:expr() { Statement::Assignment { id, expr } }
 
         rule statements() -> Vec<Statement>
             = _ stmt:statement() _ stmts:statements() {
@@ -258,6 +257,20 @@ fn factorial_test() {
     }
     fn factorial(n) {
         return (factorial((n - 1)) * n)
+    }
+    ";
+    match koala_parser::program(code) {
+        Ok(program) => program,
+        Err(error) => panic!("{}", error),
+    };
+}
+
+#[test]
+fn variable_usages_test() {
+    let code = "
+    fn main() {
+        let a = 2
+        b = 3
     }
     ";
     match koala_parser::program(code) {

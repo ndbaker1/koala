@@ -3,19 +3,19 @@ use super::grammar::{
     WhenElse,
 };
 use crate::instructions::{
-    BEQZ, CALL, CONST, END, IADD, IDIV, IMUL, ISUB, LOAD, POP, PRINT, RET, STORE,
+    BEQZ, CALL, CONST, END, FP_MOVE, IADD, IDIV, IMUL, ISUB, LOAD, POP, PRINT, RET, SP_READ, STORE,
 };
 use std::collections::HashMap;
 
 pub struct CompilerContext {
-    pub fn_map: HashMap<String, usize>,
+    pub fn_table: HashMap<String, usize>,
     pub var_map: HashMap<String, usize>,
     pub var_scope: Vec<Vec<String>>,
 }
 impl CompilerContext {
     pub fn new() -> CompilerContext {
         CompilerContext {
-            fn_map: HashMap::new(),
+            fn_table: HashMap::new(),
             var_map: HashMap::new(),
             var_scope: Vec::new(),
         }
@@ -40,7 +40,7 @@ impl CodeGen for Program {
         // generate procedure that executes only main
         let entry_point_code: [u32; BOOTSTRAP_LENGTH] = [
             CALL,
-            match context.fn_map.get(ENTRY_POINT) {
+            match context.fn_table.get(ENTRY_POINT) {
                 Some(address) => *address as u32,
                 None => panic!("could not find main function."),
             },
@@ -58,22 +58,19 @@ impl CodeGen for Program {
 impl CodeGen for FunctionDefinition {
     fn code_gen(&self, context: &mut CompilerContext, start_addr: usize) -> Vec<u32> {
         // check already existing function name
-        match context.fn_map.get(&self.id) {
+        match context.fn_table.get(&self.id) {
             None => {
                 /*
                  * We can keep track of the function addresses by labels this way,
                  * and then load their address in the FunctionCall production more easily
                  */
-                context.fn_map.insert(self.id.clone(), start_addr);
+                context.fn_table.insert(self.id.clone(), start_addr);
 
                 let mut code = Vec::new();
 
+                // Create a new scope for this function Enclosure
                 let mut new_scope = Vec::new();
-                for (index, arg) in self.args.iter().enumerate() {
-                    // expect the values to be on the stack from FunctionCall,
-                    // and then move them into call stack
-                    code.extend([STORE, index as u32, POP]);
-                    // set variable in scope for lookups
+                for arg in self.args.iter() {
                     new_scope.push(arg.clone());
                 }
                 // push new scope
@@ -81,8 +78,13 @@ impl CodeGen for FunctionDefinition {
                 for stmt in &self.body {
                     code.extend(stmt.code_gen(context, start_addr + code.len() + 1));
                 }
-                // pop new scope
+                // Pop scope since we are leaving function
                 context.var_scope.pop();
+                // Pop each Var passed through the stack by FunctionCall
+                for _ in &self.args {
+                    code.push(POP);
+                }
+
                 // return to caller
                 code.extend([RET]);
 
@@ -90,6 +92,37 @@ impl CodeGen for FunctionDefinition {
             }
             Some(_) => panic!("duplicate function definition for {}().", self.id),
         }
+    }
+}
+
+impl CodeGen for FunctionCall {
+    fn code_gen(&self, context: &mut CompilerContext, start_addr: usize) -> Vec<u32> {
+        let mut code = Vec::new();
+        // load every expression onto stack
+        for (index, arg) in self.args.iter().enumerate() {
+            code.extend(arg.code_gen(context, start_addr + code.len()));
+        }
+        /*
+         * Read Stack pointer (which is on top of function args),
+         * Subtract the length to get to the start of the args,
+         * then update our frame pointer to start here.
+         */
+        code.extend([
+            CONST,
+            (self.args.len() - 1 + 2 /* PLus 2 because we created an addition 2 elements on stack to calculate */) as u32,
+            SP_READ,
+            ISUB,
+            FP_MOVE,
+        ]);
+
+        // Search function table for address
+        let fn_addr = match context.fn_table.get(&self.id) {
+            Some(addr) => *addr as u32,
+            None => panic!("No function found to jump to"),
+        };
+        code.extend([CALL, fn_addr]);
+
+        return code;
     }
 }
 
@@ -111,12 +144,9 @@ impl CodeGen for Statement {
                  */
                 if let Some(scope) = context.var_scope.last_mut() {
                     match scope.into_iter().position(|var| var == id) {
-                        Some(var_offset) => code.extend([STORE, var_offset as u32, POP]),
-                        None => {
-                            scope.push(id.clone());
-                            code.extend([STORE, scope.len() as u32, POP]);
-                        }
-                    }
+                        Some(offset) => code.extend([STORE, offset as u32]),
+                        None => scope.push(id.clone()),
+                    };
                 }
 
                 return code;
@@ -193,7 +223,7 @@ impl CodeGen for Expr {
                     .iter()
                     .position(|var| var == name)
                 {
-                    Some(index) => (index) as u32,
+                    Some(index) => index as u32,
                     None => panic!("usage of undefined variable! '{}'", name),
                 },
             ],
@@ -216,25 +246,6 @@ impl CodeGen for BinExpr {
             BinOp::Mul => code.push(IMUL),
             BinOp::Div => code.push(IDIV),
         };
-
-        return code;
-    }
-}
-
-impl CodeGen for FunctionCall {
-    fn code_gen(&self, context: &mut CompilerContext, start_addr: usize) -> Vec<u32> {
-        let mut code = Vec::new();
-
-        for (index, arg) in self.args.iter().enumerate() {
-            code.extend(arg.code_gen(context, start_addr + code.len()));
-        }
-        code.extend([
-            CALL,
-            match context.fn_map.get(&self.id) {
-                Some(addr) => *addr as u32,
-                None => panic!("No function found to jump to"),
-            },
-        ]);
 
         return code;
     }

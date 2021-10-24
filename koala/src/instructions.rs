@@ -21,7 +21,8 @@ pub const CONST: u32 = 0x9; // load
 // Variables On Call Stack
 pub const LOAD: u32 = 0x10; // load
 pub const STORE: u32 = 0x11; // store
-pub const FPMV: u32 = 0x12; // update frame pointer
+pub const FP_MOVE: u32 = 0x12; // update frame pointer
+pub const SP_READ: u32 = 0x13; // update frame pointer
 
 // RNG
 pub const RAND: u32 = 0x20; // get random number
