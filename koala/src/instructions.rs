@@ -18,25 +18,26 @@ pub const FDIV: u32 = 0x8; // sub ints
 // Load Literal
 pub const CONST: u32 = 0x9; // load
 
-// Variables
-pub const LOAD: u32 = 0xA; // load
-pub const STORE: u32 = 0xB; // store
+// Variables On Call Stack
+pub const LOAD: u32 = 0x10; // load
+pub const STORE: u32 = 0x11; // store
+pub const FPMV: u32 = 0x12; // update frame pointer
 
 // RNG
-pub const RAND: u32 = 0xC; // get random number
+pub const RAND: u32 = 0x20; // get random number
 
 // Control Flow
-pub const JUMP: u32 = 0xD; // jump
-pub const BEQZ: u32 = 0xE; // branch equal zero
-pub const BNEZ: u32 = 0xF; // branch not equal zero
+pub const JUMP: u32 = 0x30; // jump
+pub const BEQZ: u32 = 0x31; // branch equal zero
+pub const BNEZ: u32 = 0x32; // branch not equal zero
 
 // Functions
-pub const CALL: u32 = 0x11; // jump and link
-pub const RET: u32 = 0x18; // jump return
+pub const CALL: u32 = 0x40; // jump and link
+pub const RET: u32 = 0x41; // jump return
 
 // I/O
-pub const PRINT: u32 = 0x19; // print
+pub const PRINT: u32 = 0x50; // print
 
 // Stack Ops
-pub const PUSH: u32 = 0x1B; // push stack
-pub const POP: u32 = 0x1C; // pop stack
+pub const PUSH: u32 = 0x60; // push stack
+pub const POP: u32 = 0x61; // pop stack
