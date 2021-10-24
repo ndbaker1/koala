@@ -7,6 +7,8 @@ use std::{env, panic};
 
 use crate::instructions::{self};
 
+const DEBUG: bool = true;
+
 /// The Koala Language Virtual Machine
 pub struct VirtualMachine<'a> {
     processor: Processor,
@@ -49,7 +51,7 @@ impl VirtualMachine<'_> {
     }
 
     pub fn execute(&mut self) {
-        if true {
+        if DEBUG {
             self.print(&format!(
                 "PC: {}, IP: {}, FP: {}, stack: {:?}\n",
                 self.processor.pc - 1,
@@ -142,16 +144,17 @@ impl VirtualMachine<'_> {
                 self.fetch();
                 // Push the return address onto the Call Stack
                 self.memory.call_stack.push(self.processor.pc as i32);
+                // Push the Frame Pointer address onto the Call Stack
+                self.memory.call_stack.push(self.processor.fp as i32);
                 // Move the Instruction Pointer to the address of the Function
                 self.processor.pc = self.processor.ip as usize;
             }
             instructions::RET => {
+                // Move the Frame Pointer back to the previous call's state
+                self.processor.fp = self.memory.call_stack.pop().unwrap() as usize;
                 // Move the Program Counter back to the previous address
                 // by popping from the Call Stack
-                self.processor.pc = match self.memory.call_stack.pop() {
-                    Some(addr) => addr as usize,
-                    None => panic!("no return address found!"),
-                };
+                self.processor.pc = self.memory.call_stack.pop().unwrap() as usize;
             }
             instructions::PUSH => {
                 self.fetch();
@@ -159,6 +162,11 @@ impl VirtualMachine<'_> {
             }
             instructions::POP => {
                 self.memory.data_stack.pop();
+            }
+            instructions::DUP => {
+                let val = self.memory.data_stack.pop().unwrap();
+                self.memory.data_stack.push(val);
+                self.memory.data_stack.push(val);
             }
             instructions::PRINT => {
                 self.fetch();
@@ -173,13 +181,29 @@ impl VirtualMachine<'_> {
             }
             instructions::LOAD => {
                 self.fetch();
+
+                if DEBUG {
+                    self.print(&format!(
+                        "loading with FP: {} and offset: {}\n",
+                        self.processor.fp, self.processor.ip
+                    ));
+                }
+
                 self.memory
                     .data_stack
-                    .push(self.memory.data_stack[self.processor.fp + (self.processor.ip as usize)]);
+                    .push(self.memory.data_stack[self.processor.fp + self.processor.ip as usize]);
             }
             instructions::STORE => {
                 self.fetch();
-                self.memory.data_stack[self.processor.fp - self.processor.ip as usize] =
+
+                if DEBUG {
+                    self.print(&format!(
+                        "storing with FP: {} and offset: {}\n",
+                        self.processor.fp, self.processor.ip
+                    ));
+                }
+
+                self.memory.data_stack[self.processor.fp + self.processor.ip as usize] =
                     match self.memory.data_stack.pop() {
                         Some(val) => val,
                         None => panic!("no value on stack"),
@@ -188,6 +212,10 @@ impl VirtualMachine<'_> {
             instructions::FP_MOVE => {
                 // Move frame pointer
                 self.processor.fp = self.memory.data_stack.pop().unwrap() as usize;
+            }
+            instructions::FP_READ => {
+                // Move frame pointer
+                self.memory.data_stack.push(self.processor.fp as i32);
             }
             instructions::SP_READ => {
                 // Push stack pointer onto stack

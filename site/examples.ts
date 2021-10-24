@@ -1,6 +1,13 @@
 
 export const KoalaCodeExampe = `fn main() {
-  print(2+5)
+  fact(5)
+}
+
+fn fact(n) {
+  print(n)
+  if n {
+    fact((n-1))
+  }
 }`
 
 export const CodeExample = `fun main() {

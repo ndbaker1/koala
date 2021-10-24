@@ -3,7 +3,8 @@ use super::grammar::{
     WhenElse,
 };
 use crate::instructions::{
-    BEQZ, CALL, CONST, END, FP_MOVE, IADD, IDIV, IMUL, ISUB, LOAD, POP, PRINT, RET, SP_READ, STORE,
+    BEQZ, CALL, CONST, DUP, END, FP_MOVE, FP_READ, IADD, IDIV, IMUL, ISUB, LOAD, POP, PRINT, RET,
+    SP_READ, STORE,
 };
 use std::collections::HashMap;
 
@@ -100,6 +101,7 @@ impl CodeGen for FunctionCall {
         for (index, arg) in self.args.iter().enumerate() {
             code.extend(arg.code_gen(context, start_addr + code.len()));
         }
+
         /*
          * Read Stack pointer (which is on top of function args),
          * Subtract the length to get to the start of the args,
@@ -164,18 +166,26 @@ impl CodeGen for Statement {
 }
 impl CodeGen for If {
     fn code_gen(&self, context: &mut CompilerContext, start_addr: usize) -> Vec<u32> {
+        // generate code for the comparison Expression
         let mut code = self.expr.code_gen(context, start_addr);
-
+        // const offset
+        const BRANCH_CODE_OFFSET: usize = 2;
         // helper
         let calc_offset =
             |base_code: &Vec<_>, stmt_code: &Vec<_>| start_addr + base_code.len() + stmt_code.len();
 
         let mut code_to_execute = Vec::new();
         for stmt in &self.stmts {
-            code_to_execute.extend(stmt.code_gen(context, calc_offset(&code, &code_to_execute)));
+            code_to_execute.extend(stmt.code_gen(
+                context,
+                BRANCH_CODE_OFFSET + calc_offset(&code, &code_to_execute),
+            ));
         }
         // prefix the statements with the branch
-        code.extend([BEQZ, (calc_offset(&code, &code_to_execute)) as u32]);
+        let branch_code: [u32; BRANCH_CODE_OFFSET] =
+            [BEQZ, calc_offset(&code, &code_to_execute) as u32];
+
+        code.extend(branch_code);
         code.extend(code_to_execute);
 
         return code;

@@ -22,7 +22,8 @@ pub const CONST: u32 = 0x9; // load
 pub const LOAD: u32 = 0x10; // load
 pub const STORE: u32 = 0x11; // store
 pub const FP_MOVE: u32 = 0x12; // update frame pointer
-pub const SP_READ: u32 = 0x13; // update frame pointer
+pub const SP_READ: u32 = 0x13; // read stack pointer
+pub const FP_READ: u32 = 0x14; // read frame pointer
 
 // RNG
 pub const RAND: u32 = 0x20; // get random number
@@ -42,3 +43,4 @@ pub const PRINT: u32 = 0x50; // print
 // Stack Ops
 pub const PUSH: u32 = 0x60; // push stack
 pub const POP: u32 = 0x61; // pop stack
+pub const DUP: u32 = 0x62; // duplicate top
