@@ -144,35 +144,54 @@ export default function App() {
           padding="1rem"
           shadow="2xl"
         >
-          <Box paddingBottom="1rem">
-            <Text fontSize="xl">
-              Write Koala
-            </Text>
-            <Editor
-              height={windowHeightRem}
-              language="python"
-              value={codeRef.current}
-              onChange={data => { codeRef.current = data || '' }}
-              options={{ fontFamily: '"Consolas"' }}
-            />
-          </Box>
-          <Grid>
-            <Button onClick={() => {
-              let stage
-              try {
-                stage = 'parsing'
-                setAst(parseAst(codeRef.current))
-                stage = 'code generation'
-                vmCodeRef.current = sourceCodeGen(codeRef.current)
-                setOutput('')
-                stage = 'execution'
-                run(vmCodeRef.current, outputCallback)
-                smoothScrollTo('#output')
-              } catch (e) {
-                alert('encountered error in ' + stage + ' stage:\n' + e)
-              }
-            }}>Compile & Run</Button>
-          </Grid>
+
+          <Tabs>
+            <TabList>
+              <Tab>Write Code</Tab>
+              <Tab>Language Docs</Tab>
+            </TabList>
+            <TabPanels>
+              <TabPanel>
+                <Box
+                  paddingBottom="1rem"
+                >
+                  <Editor
+                    height={windowHeightRem}
+                    language="python"
+                    value={codeRef.current}
+                    onChange={data => { codeRef.current = data || '' }}
+                    options={{ fontFamily: '"Consolas"' }}
+                  />
+                </Box>
+                <Grid>
+                  <Button onClick={() => {
+                    let stage
+                    try {
+                      stage = 'parsing'
+                      setAst(parseAst(codeRef.current))
+                      stage = 'code generation'
+                      vmCodeRef.current = sourceCodeGen(codeRef.current)
+                      setOutput('')
+                      stage = 'execution'
+                      run(vmCodeRef.current, outputCallback)
+                      smoothScrollTo('#output')
+                    } catch (e) {
+                      alert('encountered error in ' + stage + ' stage:\n' + e)
+                    }
+                  }}>Compile & Run</Button>
+                </Grid>
+              </TabPanel>
+              <TabPanel>
+                <Box
+                  paddingBottom="1rem"
+                  height={windowHeightRem}
+                >
+
+                  Docs
+                </Box>
+              </TabPanel>
+            </TabPanels>
+          </Tabs>
         </Container>
       </Center >
 
