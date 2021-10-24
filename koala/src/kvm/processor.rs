@@ -8,6 +8,8 @@ pub struct Processor {
     pub ip: u32,
     /// Stack Pointer
     pub sp: usize,
+    /// Frame Pointer
+    pub fp: usize,
     /// Return Address
     pub ret: u32,
     /// Register
@@ -20,6 +22,7 @@ impl Processor {
             pc: 0,
             ip: 0,
             sp: 0,
+            fp: 0,
             ret: 0,
             regs: [0; NUM_REGISTERS],
         }
