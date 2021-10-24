@@ -38,14 +38,12 @@ impl CodeGen for Program {
             code.extend(def.code_gen(context, code.len() + BOOTSTRAP_LENGTH));
         }
         // generate procedure that executes only main
-        let entry_point_code: [u32; BOOTSTRAP_LENGTH] = [
-            CALL,
-            match context.fn_table.get(ENTRY_POINT) {
-                Some(address) => *address as u32,
-                None => panic!("could not find main function."),
-            },
-            END,
-        ];
+        let main_addr = match context.fn_table.get(ENTRY_POINT) {
+            Some(address) => *address as u32,
+            None => panic!("could not find main function."),
+        };
+        let entry_point_code: [u32; BOOTSTRAP_LENGTH] = [CALL, main_addr, END];
+
         // prefix the code with main entrypoint
         return entry_point_code
             .iter()

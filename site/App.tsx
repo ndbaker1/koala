@@ -231,7 +231,7 @@ export default function App() {
                         <br />
                         <Grid gap="2" gridTemplateColumns="min-content auto">
                           <Box textAlign="left" fontSize="xl" width="min-content">
-                            <Text whiteSpace="nowrap">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;💬</Text>
+                            <Text whiteSpace="nowrap">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;💬</Text>
                             <Text color="gray.500" fontSize="2xl" whiteSpace="nowrap">{KoalaState.open}</Text>
                           </Box>
                           <Textarea value={output} />
