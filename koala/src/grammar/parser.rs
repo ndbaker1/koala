@@ -6,7 +6,9 @@ use std::vec;
 
 peg::parser! {
     grammar koala_parser() for str {
-        rule _() = [' ' | '\n']*
+        rule _()
+            = [' ' | '\n']* "//" [^'\n']* _  // Comments
+            / [' ' | '\n']*
 
         rule number() -> u32
             = n:$(['0'..='9']+) {? n.parse().or(Err("u32")) }
@@ -93,29 +95,26 @@ pub fn parse_code(code: &str) -> Result<Program, ParseError<LineCol>> {
     koala_parser::program(code)
 }
 
-#[test]
-fn empty_main_test() {
-    let code = "fn main() {}";
-    match koala_parser::program(code) {
-        Ok(program) => program,
-        Err(error) => panic!("{}", error),
-    };
+macro_rules! parser_tests {
+    ($($name:ident: $value:expr,)*) => {$(
+        #[test]
+        fn $name() {
+            parse_code($value).unwrap();
+        }
+    )*}
 }
 
-#[test]
-fn main_test() {
-    let code = "fn main() {
+parser_tests! {
+    empty_main_test: "fn main() {}",
+    main_test: "fn main() {
         print(2)
-    }";
-    match koala_parser::program(code) {
-        Ok(program) => program,
-        Err(error) => panic!("{}", error),
-    };
-}
-
-#[test]
-fn spaced_main_test() {
-    let code = "
+    }",
+    comment_test: "
+    fn main() {
+        // print(2)
+        print(2)
+    }",
+    spaced_main_test: "
 
     fn main() {
 
@@ -123,158 +122,74 @@ fn spaced_main_test() {
     
     }
 
-    ";
-    match koala_parser::program(code) {
-        Ok(program) => program,
-        Err(error) => panic!("{}", error),
-    };
-}
-
-#[test]
-fn multiple_fn_test() {
-    let code = "
+    ",
+    multiple_fn_test: "
     fn main() {
       print(2)
     }
     fn second() {
       print(5)
     }
-    ";
-    match koala_parser::program(code) {
-        Ok(program) => program,
-        Err(error) => panic!("{}", error),
-    };
-}
-
-#[test]
-fn binary_expr_test() {
-    let code = "fn main() {
+    ",
+    binary_expr_test: "fn main() {
         print((2+5))
-    }";
-    match koala_parser::program(code) {
-        Ok(program) => program,
-        Err(error) => panic!("{}", error),
-    };
-}
-
-#[test]
-fn function_call_test() {
-    let code = "
+    }",
+    function_call_test: "
     fn main() {
       func()
-    }
-    ";
-    match koala_parser::program(code) {
-        Ok(program) => program,
-        Err(error) => panic!("{}", error),
-    };
-}
-
-#[test]
-fn if_test() {
-    let code = "
+    }",
+    if_test: "
     fn main() {
       if 3 {
           print(3)
       }
     }
-    ";
-    match koala_parser::program(code) {
-        Ok(program) => program,
-        Err(error) => panic!("{}", error),
-    };
-}
-
-#[test]
-fn recursion_test() {
-    let code = "
+    ",
+    recursion_test: "
     fn main() {
         recurse()
     }
     fn recurse() {
         recurse() 
     }
-    ";
-    match koala_parser::program(code) {
-        Ok(program) => program,
-        Err(error) => panic!("{}", error),
-    };
-}
-
-#[test]
-fn void_return_test() {
-    let code = "
+    ",
+    void_return_test: "
     fn main() {
         recurse()
     }
     fn recurse() {
         return
     }
-    ";
-    match koala_parser::program(code) {
-        Ok(program) => program,
-        Err(error) => panic!("{}", error),
-    };
-}
-
-#[test]
-fn return_expr_test() {
-    let code = "
+    ",
+    return_expr_test: "
     fn main() {
         print(return_value())
     }
     fn return_value() {
         return 5
     }
-    ";
-    match koala_parser::program(code) {
-        Ok(program) => program,
-        Err(error) => panic!("{}", error),
-    };
-}
-
-#[test]
-fn args_test() {
-    let code = "
+    ",
+    args_test: "
     fn main() {
         test(4, 6)
     }
     fn test(n, m) {
         return (n * m)
     }
-    ";
-    match koala_parser::program(code) {
-        Ok(program) => program,
-        Err(error) => panic!("{}", error),
-    };
-}
-
-#[test]
-fn factorial_test() {
-    let code = "
+    ",
+    factorial_test: "
     fn main() {
         factorial(4)
     }
     fn factorial(n) {
         return (factorial((n - 1)) * n)
     }
-    ";
-    match koala_parser::program(code) {
-        Ok(program) => program,
-        Err(error) => panic!("{}", error),
-    };
-}
-
-#[test]
-fn variable_usages_test() {
-    let code = "
+    ",
+    variable_usages_test: "
     fn main() {
         let a = 2
         b = 3
+        print((a+b))
     }
-    ";
-    match koala_parser::program(code) {
-        Ok(program) => program,
-        Err(error) => panic!("{}", error),
-    };
+    ",
 }

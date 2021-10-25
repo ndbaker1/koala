@@ -56,7 +56,7 @@ impl VirtualMachine<'_> {
     pub fn execute(&mut self) {
         if DEBUG {
             self.print(&format!(
-                "PC: {}, IP: {:#x}, FP: {}, SP: {}, stack: {:?}\n",
+                "\nPC: {:<3} IP: {:<#6x} FP: {:<3} SP: {:<3} stack: {:?}\n",
                 self.processor.pc - 1,
                 self.processor.ip,
                 self.processor.fp,
