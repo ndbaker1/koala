@@ -3,11 +3,14 @@ mod processor;
 
 use memory::Memory;
 use processor::Processor;
-use std::{env, panic};
+use std::{
+    env::{self},
+    panic,
+};
 
 use crate::instructions::{self};
 
-const DEBUG: bool = true;
+const DEBUG: bool = false;
 
 /// The Koala Language Virtual Machine
 pub struct VirtualMachine<'a> {
@@ -53,10 +56,11 @@ impl VirtualMachine<'_> {
     pub fn execute(&mut self) {
         if DEBUG {
             self.print(&format!(
-                "PC: {}, IP: {}, FP: {}, stack: {:?}\n",
+                "PC: {}, IP: {:#x}, FP: {}, SP: {}, stack: {:?}\n",
                 self.processor.pc - 1,
                 self.processor.ip,
                 self.processor.fp,
+                self.sp(),
                 self.memory.data_stack
             ));
         }
@@ -140,12 +144,16 @@ impl VirtualMachine<'_> {
                 false => panic!("not enough arguments on stack to do BEQZ."),
             },
             instructions::CALL => {
-                // Fetch the address of the call
+                // Fetch the address of the call, then
                 self.fetch();
                 // Push the return address onto the Call Stack
                 self.memory.call_stack.push(self.processor.pc as i32);
                 // Push the Frame Pointer address onto the Call Stack
                 self.memory.call_stack.push(self.processor.fp as i32);
+                // Read the number of args
+                let arg_count = self.memory.data_stack.pop().unwrap() as usize;
+                // update the Frame pointer
+                self.processor.fp = self.sp() - arg_count;
                 // Move the Instruction Pointer to the address of the Function
                 self.processor.pc = self.processor.ip as usize;
             }
@@ -209,20 +217,6 @@ impl VirtualMachine<'_> {
                         None => panic!("no value on stack"),
                     };
             }
-            instructions::FP_MOVE => {
-                // Move frame pointer
-                self.processor.fp = self.memory.data_stack.pop().unwrap() as usize;
-            }
-            instructions::FP_READ => {
-                // Move frame pointer
-                self.memory.data_stack.push(self.processor.fp as i32);
-            }
-            instructions::SP_READ => {
-                // Push stack pointer onto stack
-                self.memory
-                    .data_stack
-                    .push((self.memory.data_stack.len()) as i32);
-            }
             _ => { /* no-op */ }
         };
     }
@@ -230,10 +224,15 @@ impl VirtualMachine<'_> {
     fn print(&mut self, message: &str) {
         (self.outpipe)(message);
     }
+
+    fn sp(&self) -> usize {
+        self.memory.data_stack.len()
+    }
 }
 
-fn debug(msg: &str) {
-    if let Ok(_) = env::var("DEBUG") {
-        println!("{}", msg);
+fn is_debug() -> bool {
+    match env::var("DEBUG") {
+        Ok(_) => true,
+        Err(_) => false,
     }
 }

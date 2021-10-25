@@ -3,21 +3,18 @@ use super::grammar::{
     WhenElse,
 };
 use crate::instructions::{
-    BEQZ, CALL, CONST, DUP, END, FP_MOVE, FP_READ, IADD, IDIV, IMUL, ISUB, LOAD, POP, PRINT, RET,
-    SP_READ, STORE,
+    BEQZ, CALL, CONST, END, IADD, IDIV, IMUL, ISUB, LOAD, POP, PRINT, RET, STORE,
 };
 use std::collections::HashMap;
 
 pub struct CompilerContext {
     pub fn_table: HashMap<String, usize>,
-    pub var_map: HashMap<String, usize>,
     pub var_scope: Vec<Vec<String>>,
 }
 impl CompilerContext {
     pub fn new() -> CompilerContext {
         CompilerContext {
             fn_table: HashMap::new(),
-            var_map: HashMap::new(),
             var_scope: Vec::new(),
         }
     }
@@ -33,7 +30,7 @@ impl CodeGen for Program {
     fn code_gen(&self, context: &mut CompilerContext, _: usize) -> Vec<u32> {
         let mut code = Vec::new();
 
-        const BOOTSTRAP_LENGTH: usize = 3;
+        const BOOTSTRAP_LENGTH: usize = 5;
         // generate code for every definition
         for def in &self.0 {
             code.extend(def.code_gen(context, code.len() + BOOTSTRAP_LENGTH));
@@ -43,7 +40,7 @@ impl CodeGen for Program {
             Some(address) => *address as u32,
             None => panic!("could not find main function."),
         };
-        let entry_point_code: [u32; BOOTSTRAP_LENGTH] = [CALL, main_addr, END];
+        let entry_point_code: [u32; BOOTSTRAP_LENGTH] = [CONST, 0, CALL, main_addr, END];
 
         // prefix the code with main entrypoint
         return entry_point_code
@@ -65,7 +62,7 @@ impl CodeGen for FunctionDefinition {
                  */
                 context.fn_table.insert(self.id.clone(), start_addr);
 
-                let mut code = Vec::new();
+                let mut code = vec![];
 
                 // Create a new scope for this function Enclosure
                 let mut new_scope = Vec::new();
@@ -102,18 +99,8 @@ impl CodeGen for FunctionCall {
             code.extend(arg.code_gen(context, start_addr + code.len()));
         }
 
-        /*
-         * Read Stack pointer (which is on top of function args),
-         * Subtract the length to get to the start of the args,
-         * then update our frame pointer to start here.
-         */
-        code.extend([
-            CONST,
-            (self.args.len() - 1 + 2 /* PLus 2 because we created an addition 2 elements on stack to calculate */) as u32,
-            SP_READ,
-            ISUB,
-            FP_MOVE,
-        ]);
+        // Tell the Call inst how many args are in the frame
+        code.extend([CONST, self.args.len() as u32]);
 
         // Search function table for address
         let fn_addr = match context.fn_table.get(&self.id) {
