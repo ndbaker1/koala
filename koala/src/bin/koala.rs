@@ -1,7 +1,6 @@
-use std::{env::args, path::Path};
-
 use byteorder::{BigEndian, ByteOrder};
 use koala::kvm::VirtualMachine;
+use std::{env::args, path::Path};
 
 fn main() {
     let files: Vec<String> = args().collect();

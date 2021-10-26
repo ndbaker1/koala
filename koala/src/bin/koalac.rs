@@ -1,10 +1,8 @@
-use std::collections::HashMap;
+use koala::compiler::{CodeGen, CompilerContext};
+use koala::parser::parse_code;
 use std::fs::{self, File};
 use std::io::Write;
 use std::{env::args, ffi::OsStr, path::Path};
-
-use koala::grammar::compiler::{CodeGen, CompilerContext};
-use koala::grammar::parser::parse_code;
 
 fn main() -> std::io::Result<()> {
     let args: Vec<String> = args().collect();

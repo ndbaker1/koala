@@ -15,9 +15,6 @@ pub const FSUB: u32 = 0x6; // sub ints
 pub const FMUL: u32 = 0x7; // add ints
 pub const FDIV: u32 = 0x8; // sub ints
 
-// Load Literal
-pub const CONST: u32 = 0x9; // load
-
 // Variables On Call Stack
 pub const LOAD: u32 = 0x10; // load
 pub const STORE: u32 = 0x11; // store
@@ -39,6 +36,5 @@ pub const RET: u32 = 0x41; // jump return
 pub const PRINT: u32 = 0x50; // print
 
 // Stack Ops
-pub const PUSH: u32 = 0x60; // push stack
+pub const PUSH: u32 = 0x60; // load immediate
 pub const POP: u32 = 0x61; // pop stack
-pub const DUP: u32 = 0x62; // duplicate top

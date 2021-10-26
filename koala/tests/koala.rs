@@ -1,9 +1,7 @@
 use koala::{
-    grammar::{
-        compiler::{CodeGen, CompilerContext},
-        parser::parse_code,
-    },
+    compiler::{CodeGen, CompilerContext},
     kvm::VirtualMachine,
+    parser::parse_code,
 };
 
 macro_rules! code_tests {
@@ -27,7 +25,12 @@ code_tests! {
   empty_main_test: "fn main() {}",
   print_test: "
   fn main() {
-    print(a)
+    print(2)
+  }
+  ",
+  comment_test: "
+  fn main() {
+    // print(2)
   }
   ",
   variable_test: "

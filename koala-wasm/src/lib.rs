@@ -1,9 +1,7 @@
-use std::collections::HashMap;
-
-use koala::grammar::compiler::{CodeGen, CompilerContext};
-use koala::grammar::grammar::Program;
-use koala::grammar::parser::parse_code;
+use koala::compiler::{CodeGen, CompilerContext};
+use koala::grammar::Program;
 use koala::kvm::VirtualMachine;
+use koala::parser::parse_code;
 use wasm_bindgen::prelude::*;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global

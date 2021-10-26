@@ -3,7 +3,7 @@ use super::grammar::{
     WhenElse,
 };
 use crate::instructions::{
-    BEQZ, CALL, CONST, END, IADD, IDIV, IMUL, ISUB, LOAD, POP, PRINT, RET, STORE,
+    BEQZ, CALL, END, IADD, IDIV, IMUL, ISUB, LOAD, POP, PRINT, PUSH, RET, STORE,
 };
 use std::collections::HashMap;
 
@@ -80,7 +80,6 @@ impl CodeGen for FunctionDefinition {
                 for _ in &self.args {
                     code.push(POP);
                 }
-
                 // return to caller
                 code.extend([RET]);
 
@@ -98,7 +97,6 @@ impl CodeGen for FunctionCall {
         for (index, arg) in self.args.iter().enumerate() {
             code.extend(arg.code_gen(context, start_addr + code.len()));
         }
-
         // Search function table for address
         let fn_addr = match context.fn_table.get(&self.id) {
             Some(addr) => *addr as u32,
@@ -116,9 +114,8 @@ impl CodeGen for Statement {
         match self {
             Self::Print(expr) => expr
                 .code_gen(context, start_addr)
-                .iter()
-                .chain([PRINT, 1].iter())
-                .cloned()
+                .into_iter()
+                .chain([PRINT, 1])
                 .collect(),
             Self::Assignment { id, expr } => {
                 let mut code = expr.code_gen(context, start_addr);
@@ -141,9 +138,8 @@ impl CodeGen for Statement {
             Self::Return => vec![RET],
             Self::ReturnExpr(expr) => expr
                 .code_gen(context, start_addr)
-                .iter()
-                .chain([RET].iter())
-                .cloned()
+                .into_iter()
+                .chain([RET])
                 .collect(),
             _ => Vec::new(),
         }
@@ -177,29 +173,11 @@ impl CodeGen for If {
     }
 }
 
-impl CodeGen for When {
-    fn code_gen(&self, context: &mut CompilerContext, start_addr: usize) -> Vec<u32> {
-        vec![]
-    }
-}
-
-impl CodeGen for WhenCase {
-    fn code_gen(&self, context: &mut CompilerContext, start_addr: usize) -> Vec<u32> {
-        vec![]
-    }
-}
-
-impl CodeGen for WhenElse {
-    fn code_gen(&self, context: &mut CompilerContext, start_addr: usize) -> Vec<u32> {
-        vec![]
-    }
-}
-
 impl CodeGen for Expr {
     fn code_gen(&self, context: &mut CompilerContext, start_addr: usize) -> Vec<u32> {
         match self {
-            Self::IntLit(int) => vec![CONST, *int],
-            Self::BoolLit(truthy) => vec![CONST, *truthy as u32],
+            Self::IntLit(int) => vec![PUSH, *int],
+            Self::BoolLit(truthy) => vec![PUSH, *truthy as u32],
             Self::StringLit(string) => string // TODO
                 .chars()
                 .into_iter()
@@ -241,5 +219,23 @@ impl CodeGen for BinExpr {
         };
 
         return code;
+    }
+}
+
+impl CodeGen for When {
+    fn code_gen(&self, context: &mut CompilerContext, start_addr: usize) -> Vec<u32> {
+        vec![]
+    }
+}
+
+impl CodeGen for WhenCase {
+    fn code_gen(&self, context: &mut CompilerContext, start_addr: usize) -> Vec<u32> {
+        vec![]
+    }
+}
+
+impl CodeGen for WhenElse {
+    fn code_gen(&self, context: &mut CompilerContext, start_addr: usize) -> Vec<u32> {
+        vec![]
     }
 }
