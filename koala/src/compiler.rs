@@ -5,7 +5,7 @@ use super::grammar::{
 use crate::instructions::{
     BEQZ, CALL, END, IADD, IDIV, IMUL, ISUB, LOCAL_LOAD, LOCAL_STORE, POP, PRINT, PUSH, RET,
 };
-use std::{borrow::BorrowMut, collections::HashMap};
+use std::collections::HashMap;
 
 pub struct CompilerContext {
     pub fn_table: HashMap<String, usize>,

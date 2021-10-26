@@ -163,7 +163,7 @@ export default function App() {
                 >
                   <Editor
                     height={toRem(windowHeight)}
-                    language="python"
+                    language="c"
                     value={codeRef.current}
                     onChange={data => { codeRef.current = data || '' }}
                     options={{ fontFamily: '"Consolas"' }}
