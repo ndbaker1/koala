@@ -16,19 +16,28 @@ const DEBUG: bool = false;
 pub struct VirtualMachine<'a> {
     processor: Processor,
     memory: Memory,
+    frames: Vec<Frame>,
     /// Running flag
     running: bool,
     /// Callback for Interaction with the outside world
     outpipe: OutputCallback<'a>,
 }
 
+/// Callback used to interact with the outside
 pub type OutputCallback<'a> = &'a dyn Fn(&str) -> ();
+
+pub struct Frame {
+    pub fn_id: usize,
+    pub locals: Vec<i32>,
+    pub return_val: i32,
+}
 
 impl VirtualMachine<'_> {
     pub fn new(outpipe: OutputCallback) -> VirtualMachine {
         VirtualMachine {
             processor: Processor::new(),
             memory: Memory::new(),
+            frames: Vec::new(),
             running: false,
             outpipe,
         }
@@ -48,12 +57,12 @@ impl VirtualMachine<'_> {
         }
     }
 
-    pub fn fetch(&mut self) {
+    fn fetch(&mut self) {
         self.processor.ip = self.memory.read(&self.processor.pc) as u32;
         self.processor.pc += 1;
     }
 
-    pub fn execute(&mut self) {
+    fn execute(&mut self) {
         if DEBUG {
             self.print(&format!(
                 "\nPC: {:<3} IP: {:<#6x} FP: {:<3} SP: {:<3} stack: {:?}\n",
@@ -144,16 +153,18 @@ impl VirtualMachine<'_> {
                 false => panic!("not enough arguments on stack to do BEQZ."),
             },
             instructions::CALL => {
-                // Fetch the address of the call, then
-                self.fetch();
                 // Push the return address onto the Call Stack
                 self.memory.call_stack.push(self.processor.pc as i32);
                 // Push the Frame Pointer address onto the Call Stack
                 self.memory.call_stack.push(self.processor.fp as i32);
+                // Fetch arge count from the stack
+                self.fetch();
                 // Read the number of args
-                let arg_count = self.memory.data_stack.pop().unwrap() as usize;
+                let arg_count = self.processor.ip as usize;
                 // update the Frame pointer
                 self.processor.fp = self.sp() - arg_count;
+                // Fetch the address of the call
+                self.fetch();
                 // Move the Instruction Pointer to the address of the Function
                 self.processor.pc = self.processor.ip as usize;
             }
@@ -223,6 +234,10 @@ impl VirtualMachine<'_> {
 
     fn print(&mut self, message: &str) {
         (self.outpipe)(message);
+    }
+
+    fn fp(&self) -> usize {
+        self.memory.data_stack.len()
     }
 
     fn sp(&self) -> usize {

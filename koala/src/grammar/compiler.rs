@@ -30,7 +30,7 @@ impl CodeGen for Program {
     fn code_gen(&self, context: &mut CompilerContext, _: usize) -> Vec<u32> {
         let mut code = Vec::new();
 
-        const BOOTSTRAP_LENGTH: usize = 5;
+        const BOOTSTRAP_LENGTH: usize = 4;
         // generate code for every definition
         for def in &self.0 {
             code.extend(def.code_gen(context, code.len() + BOOTSTRAP_LENGTH));
@@ -40,7 +40,7 @@ impl CodeGen for Program {
             Some(address) => *address as u32,
             None => panic!("could not find main function."),
         };
-        let entry_point_code: [u32; BOOTSTRAP_LENGTH] = [CONST, 0, CALL, main_addr, END];
+        let entry_point_code: [u32; BOOTSTRAP_LENGTH] = [CALL, 0, main_addr, END];
 
         // prefix the code with main entrypoint
         return entry_point_code
@@ -99,15 +99,13 @@ impl CodeGen for FunctionCall {
             code.extend(arg.code_gen(context, start_addr + code.len()));
         }
 
-        // Tell the Call inst how many args are in the frame
-        code.extend([CONST, self.args.len() as u32]);
-
         // Search function table for address
         let fn_addr = match context.fn_table.get(&self.id) {
             Some(addr) => *addr as u32,
             None => panic!("No function found to jump to"),
         };
-        code.extend([CALL, fn_addr]);
+        // Tell the Call inst how many args are in the frame
+        code.extend([CALL, self.args.len() as u32, fn_addr]);
 
         return code;
     }
