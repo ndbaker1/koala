@@ -5,7 +5,7 @@ use super::grammar::{
 use crate::instructions::{
     BEQZ, CALL, END, IADD, IDIV, IMUL, ISUB, LOCAL_LOAD, LOCAL_STORE, POP, PRINT, PUSH, RET,
 };
-use std::collections::HashMap;
+use std::{borrow::BorrowMut, collections::HashMap};
 
 pub struct CompilerContext {
     pub fn_table: HashMap<String, usize>,
@@ -129,9 +129,13 @@ impl CodeGen for Statement {
 
                 return code;
             }
-            Self::FunctionCall(func_call) => func_call.code_gen(context, start_addr),
+            Self::FunctionCall(func_call) => func_call
+                .code_gen(context, start_addr)
+                .into_iter()
+                .chain([POP])
+                .collect(),
             Self::If(if_data) => if_data.code_gen(context, start_addr),
-            Self::Return => vec![RET],
+            Self::Return => vec![PUSH, 0, RET],
             Self::ReturnExpr(expr) => expr
                 .code_gen(context, start_addr)
                 .into_iter()
