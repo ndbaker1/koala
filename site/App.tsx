@@ -4,7 +4,6 @@ import Editor from '@monaco-editor/react'
 import ReactJson from 'react-json-view'
 
 import { VscDebugStepBack, VscRepo, VscTerminal } from 'react-icons/vsc'
-import { RiStackLine } from 'react-icons/ri'
 
 import { Box, Center, Container, Grid, HStack, Text } from '@chakra-ui/layout'
 import { Button } from '@chakra-ui/button'
@@ -16,7 +15,10 @@ import { Textarea } from '@chakra-ui/textarea'
 
 const repo = "https://github.com/ndbaker1/koala"
 
-const windowHeightRem = "28rem"
+const windowHeight = 28
+const minScreenHeight = 40
+
+function toRem(value: number) { return value + "rem" }
 
 enum KoalaState {
   open = "ʕ •ᴥ•ʔ",
@@ -65,7 +67,7 @@ export default function App() {
       {/* Intro Component */}
       <Center
         paddingX="2rem"
-        height="100vh"
+        height={`max(100vh,${toRem(minScreenHeight)})`}
       >
         <Container
           borderRadius="xl"
@@ -134,7 +136,7 @@ export default function App() {
       <Center
         id="editor"
         padding="2rem"
-        height="100vh"
+        height={`max(100vh,${toRem(minScreenHeight)})`}
       >
         <Container
           borderRadius="xl"
@@ -155,7 +157,7 @@ export default function App() {
                   paddingBottom="1rem"
                 >
                   <Editor
-                    height={windowHeightRem}
+                    height={toRem(windowHeight)}
                     language="python"
                     value={codeRef.current}
                     onChange={data => { codeRef.current = data || '' }}
@@ -183,7 +185,7 @@ export default function App() {
               <TabPanel>
                 <Box
                   paddingBottom="1rem"
-                  height={windowHeightRem}
+                  height={toRem(windowHeight)}
                 >
 
                   Docs
@@ -198,7 +200,7 @@ export default function App() {
       <Center
         id="output"
         padding="2rem"
-        height="100vh"
+        height={`max(100vh,${toRem(minScreenHeight)})`}
       >
         <Container
           borderRadius="md"
@@ -219,7 +221,7 @@ export default function App() {
                   textAlign="left"
                   overflow="auto"
                   overscrollBehavior="contain"
-                  height={windowHeightRem}
+                  height={toRem(windowHeight)}
                 >
                   <Box
                     fontSize="md"
@@ -254,7 +256,7 @@ export default function App() {
                   textAlign="left"
                   overflow="auto"
                   overscrollBehavior="contain"
-                  height={windowHeightRem}
+                  height={toRem(windowHeight)}
                 >
                   {/* backup base json stringify */}
                   {/* <pre style={{ fontFamily: 'monospace' }}>{JSON.stringify(JSON.parse(ast || '{}'), null, 2)}</pre> */}
@@ -271,7 +273,7 @@ export default function App() {
                 <Textarea
                   overflow="auto"
                   overscrollBehavior="contain"
-                  height={windowHeightRem}
+                  height={toRem(windowHeight)}
                   fontFamily="monospace"
                   value={vmCodeRef.current
                     .reduce<string[]>((cur, val) => cur.concat(['0x' + val.toString(16).padStart(8, '0').toUpperCase()]), [])
