@@ -1,8 +1,5 @@
-use crate::instructions::{self};
-use std::{
-    env::{self},
-    panic,
-};
+use crate::instructions;
+use std::panic;
 
 const DEBUG: bool = false;
 
