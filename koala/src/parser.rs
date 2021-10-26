@@ -26,13 +26,13 @@ peg::parser! {
             / "-" { BinOp::Minus }
 
         rule args() -> Vec<Expr>
-        = _ expr:expr() _ "," _ args:args() {
-            let mut all = vec![expr];
-            all.extend(args);
-            return all;
-         }
-        / _ expr:expr() _ { vec![expr] }
-        / _ { vec![] }
+            = _ expr:expr() _ "," _ args:args() {
+                let mut all = vec![expr];
+                all.extend(args);
+                return all;
+            }
+            / _ expr:expr() _ { vec![expr] }
+            / _ { vec![] }
 
         rule function_call() -> FunctionCall
             = id:identifier() "(" args:args() ")" { FunctionCall { id, args } }
@@ -78,7 +78,8 @@ peg::parser! {
             / _ { vec![] }
 
         rule function_definition() -> FunctionDefinition
-            =  "fn " _ id:identifier() "(" args:arg_defs() ")" _ "{" body:statements() "}" { FunctionDefinition { id, args, body } }
+            =  "fn " _ id:identifier() "(" args:arg_defs() ")" _ "?" _ "{" body:statements() "}" { FunctionDefinition { id, args, body, has_return_val: true } }
+            /  "fn " _ id:identifier() "(" args:arg_defs() ")" _ "{" body:statements() "}" { FunctionDefinition { id, args, body, has_return_val: false } }
 
         pub rule program() -> Program
             = _ f:function_definition() _ p:program() {

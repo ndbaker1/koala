@@ -13,6 +13,7 @@ pub struct FunctionDefinition {
     pub id: String,
     pub args: Vec<String>,
     pub body: Vec<Statement>,
+    pub has_return_val: bool,
 }
 
 /// Statement:

@@ -63,19 +63,19 @@ code_tests! {
   ""),
   fib_test: ("
   fn main() {
-    fib(4)
+    print(fib(4))
   }
   
   fn fib(n) {
     if n {
       if (n-1) {
-        fib((n-1))
-        fib((n-2))
+        return (fib((n-1)) + fib((n-2)))
       }
     }
+    return 1
   }
   ",
-  ""),
+  "5"),
   multple_call_test_fp: ("
   fn main() {
     t(5)

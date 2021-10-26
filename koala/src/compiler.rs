@@ -90,7 +90,7 @@ impl CodeGen for FunctionCall {
     fn code_gen(&self, context: &mut CompilerContext, start_addr: usize) -> Vec<u32> {
         let mut code = Vec::new();
         // load every expression onto stack
-        for (index, arg) in self.args.iter().enumerate() {
+        for arg in self.args.iter().rev() {
             code.extend(arg.code_gen(context, start_addr + code.len()));
         }
         // Search function table for address
