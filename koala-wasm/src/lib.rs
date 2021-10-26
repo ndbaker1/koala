@@ -16,14 +16,22 @@ extern "C" {
 }
 
 #[wasm_bindgen]
-pub fn run(machine_code: &[u32], output_callback: &js_sys::Function) {
+pub fn run(
+    machine_code: &[u32],
+    output_callback: &js_sys::Function,
+    debug_callback: &js_sys::Function,
+) {
     let rust_output_callback = &|msg: &str| {
-        match output_callback.call1(&JsValue::NULL, &JsValue::from_str(msg)) {
-            Ok(_) => { /* 👍 */ }
-            Err(_) => { /* 🔥 */ }
-        }
+        output_callback
+            .call1(&JsValue::NULL, &JsValue::from_str(msg))
+            .unwrap();
     };
-    let mut vm = VirtualMachine::new(rust_output_callback);
+    let rust_debug_callback = &|msg: &str| {
+        debug_callback
+            .call1(&JsValue::NULL, &JsValue::from_str(msg))
+            .unwrap();
+    };
+    let mut vm = VirtualMachine::new(rust_output_callback, rust_debug_callback);
     vm.load_code(machine_code);
     vm.run()
 }

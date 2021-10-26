@@ -1,14 +1,10 @@
 use crate::instructions;
 use std::panic;
 
-const DEBUG: bool = false;
-
 /// The Koala Language Virtual Machine
 pub struct VirtualMachine<'a> {
     /// Program Counter
     pc: usize,
-    /// Instruction Register
-    ir: u32,
     // Code Memory
     code: Vec<u32>,
     /// Frames indicate the start of a function call,
@@ -21,12 +17,15 @@ pub struct VirtualMachine<'a> {
     /// Running flag
     running: bool,
     /// Callback for Interaction with the outside world
-    outpipe: OutputCallback<'a>,
+    output_pipe: OutputCallback<'a>,
+    /// Callback for debugging output
+    debug_pipe: OutputCallback<'a>,
 }
 
 /// Callback used to interact with the outside
 pub type OutputCallback<'a> = &'a dyn Fn(&str) -> ();
 
+#[derive(Debug)]
 pub struct Frame {
     pub fn_addr: usize,
     pub locals: Vec<i32>,
@@ -34,16 +33,19 @@ pub struct Frame {
 }
 
 impl VirtualMachine<'_> {
-    pub fn new(outpipe: OutputCallback) -> VirtualMachine {
+    pub fn new<'a>(
+        output_pipe: OutputCallback<'a>,
+        debug_pipe: OutputCallback<'a>,
+    ) -> VirtualMachine<'a> {
         VirtualMachine {
             pc: 0,
-            ir: 0,
             code: Vec::new(),
             call_stack: Vec::new(),
             stack: Vec::new(),
             globals: Vec::new(),
             running: false,
-            outpipe,
+            output_pipe,
+            debug_pipe,
         }
     }
 
@@ -70,15 +72,14 @@ impl VirtualMachine<'_> {
         // Pull the opcode fetched prior
         let opcode = self.fetch();
 
-        if DEBUG {
-            self.print(&format!(
-                "\nPC: {:<3} IR: {:<#6x} SP: {:<3} stack: {:?}\n",
-                self.pc - 1,
-                opcode,
-                self.sp(),
-                self.stack
-            ));
-        }
+        self.debug(&format!(
+            "\nPC: {:<3} IR: {:<#6x} SP: {:<3} stack: {:?} frame: {:#?}\n",
+            self.pc - 1,
+            opcode,
+            self.sp(),
+            self.stack,
+            self.call_stack,
+        ));
 
         match opcode {
             instructions::END => {
@@ -143,8 +144,6 @@ impl VirtualMachine<'_> {
                 }
             }
             instructions::CALL => {
-                // Capture the current PC
-                let return_addr = self.pc;
                 // Fetch arg count from the stack
                 let arg_count = self.fetch();
                 // Fetch the address of the call
@@ -154,6 +153,8 @@ impl VirtualMachine<'_> {
                     .into_iter()
                     .map(|_| self.stack.pop().unwrap())
                     .collect();
+                // Capture the current PC
+                let return_addr = self.pc;
                 // Push a new Stack Frame
                 self.call_stack.push(Frame {
                     fn_addr,
@@ -188,9 +189,7 @@ impl VirtualMachine<'_> {
             instructions::LOCAL_LOAD => {
                 let offset = self.fetch() as usize;
 
-                if DEBUG {
-                    self.print(&format!("loading with offset: {}\n", offset));
-                }
+                self.debug(&format!("loading with offset: {}\n", offset));
 
                 self.stack
                     .push(self.call_stack.last().unwrap().locals[offset]);
@@ -198,9 +197,7 @@ impl VirtualMachine<'_> {
             instructions::LOCAL_STORE => {
                 let offset = self.fetch() as usize;
 
-                if DEBUG {
-                    self.print(&format!("storing with offset: {}\n", offset));
-                }
+                self.debug(&format!("storing with offset: {}\n", offset));
 
                 self.call_stack.last_mut().unwrap().locals[offset] = match self.stack.pop() {
                     Some(val) => val,
@@ -214,7 +211,11 @@ impl VirtualMachine<'_> {
     }
 
     fn print(&mut self, message: &str) {
-        (self.outpipe)(message);
+        (self.output_pipe)(message);
+    }
+
+    fn debug(&mut self, message: &str) {
+        (self.debug_pipe)(message);
     }
 
     fn sp(&self) -> usize {

@@ -1,3 +1,5 @@
+use std::{cell::RefCell, rc::Rc};
+
 use koala::{
     compiler::{CodeGen, CompilerContext},
     kvm::VirtualMachine,
@@ -8,38 +10,49 @@ macro_rules! code_tests {
   ($($name:ident: $value:expr,)*) => {$(
       #[test]
       fn $name() {
-        kvm_run_code($value);
+        let (code, expected) = $value;
+        assert_eq!(kvm_run_code(&code), expected);
       }
   )*}
 }
 
-fn kvm_run_code(code: &str) {
+fn kvm_run_code(code: &str) -> String {
+    let value = Rc::new(RefCell::new(String::new()));
+    let captured_value = value.clone();
+
+    let print_callback = &move |msg: &str| *captured_value.borrow_mut() += msg;
+
     let program = parse_code(&code).unwrap();
     let bin = program.code_gen(&mut CompilerContext::new(), 0);
-    let mut kvm = VirtualMachine::new(&|msg: &str| print!("{}", msg));
+    let mut kvm = VirtualMachine::new(print_callback, &|msg: &str| println!("{}", msg));
     kvm.load_code(&bin);
     kvm.run();
+
+    return value.take();
 }
 
 code_tests! {
-  empty_main_test: "fn main() {}",
-  print_test: "
+  empty_main_test: ("fn main() {}", ""),
+  print_test: ("
   fn main() {
     print(2)
   }
   ",
-  comment_test: "
+  "2"),
+  comment_test: ("
   fn main() {
     // print(2)
   }
   ",
-  variable_test: "
+  ""),
+  variable_test: ("
   fn main() {
     let x = 2
     print(x)
   }
   ",
-  nested_ifs_test: "
+  "2"),
+  nested_ifs_test: ("
   fn main() {
     if 1 { if 0 {} }
     if 0 { if 1 {} }
@@ -47,13 +60,13 @@ code_tests! {
     if 0 { if 0 {} }
   }
   ",
-  fib_test: "
+  ""),
+  fib_test: ("
   fn main() {
     fib(4)
   }
   
   fn fib(n) {
-    print(n)
     if n {
       if (n-1) {
         fib((n-1))
@@ -62,7 +75,8 @@ code_tests! {
     }
   }
   ",
-  multple_call_test_fp: "
+  ""),
+  multple_call_test_fp: ("
   fn main() {
     t(5)
   }
@@ -76,13 +90,15 @@ code_tests! {
     print(a)
   }
   ",
-  return_value_test: "
+  "43"),
+  return_value_test: ("
   fn main() {
     print(f())
   }
 
-  f() {
+  fn f() {
     return 3
   }
   ",
+  "3"),
 }

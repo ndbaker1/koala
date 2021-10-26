@@ -16,7 +16,7 @@ fn kvm_output_callback_modify_values() {
 
     let code = &[PUSH as u32, 0, PRINT as u32, 1, END as u32];
 
-    let mut vm = VirtualMachine::new(print_callback);
+    let mut vm = VirtualMachine::new(print_callback, print_callback);
     vm.load_code(code);
     vm.run();
 
@@ -34,7 +34,7 @@ fn kvn_stack_load_print() {
 
     let code = &[PUSH as u32, test_value, PRINT as u32, 1, END as u32];
 
-    let mut vm = VirtualMachine::new(print_callback);
+    let mut vm = VirtualMachine::new(print_callback, print_callback);
     vm.load_code(code);
     vm.run();
 

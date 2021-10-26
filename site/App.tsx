@@ -5,13 +5,14 @@ import ReactJson from 'react-json-view'
 
 import { VscDebugStepBack, VscRepo, VscTerminal } from 'react-icons/vsc'
 
-import { Box, Center, Container, Grid, HStack, Link, Text } from '@chakra-ui/layout'
+import { Box, Center, Container, Grid, HStack, Link, Stack, Text } from '@chakra-ui/layout'
 import { Button } from '@chakra-ui/button'
 
 import init, { run, sourceCodeGen, parseAst } from 'koala'
 import { KoalaCodeExampe } from './examples'
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@chakra-ui/tabs'
 import { Textarea } from '@chakra-ui/textarea'
+import { Checkbox } from '@chakra-ui/checkbox'
 
 const repo = "https://github.com/ndbaker1/koala"
 
@@ -39,7 +40,9 @@ export default function App() {
   const vmCodeRef = React.useRef(new Uint32Array)
   const [output, setOutput] = React.useState("")
 
+  const [outputConfig, setOutputConfig] = React.useState({ output: true, debug: false })
   const outputCallback = (str: string) => setOutput(cur => cur + str)
+  const debugCallback = (str: string) => setOutput(cur => cur + str)
 
   const [mainKoala, setMainKoala] = React.useState(KoalaState.open)
 
@@ -166,7 +169,7 @@ export default function App() {
                     options={{ fontFamily: '"Consolas"' }}
                   />
                 </Box>
-                <Grid>
+                <Grid gap="5" gridTemplateColumns='1fr auto'>
                   <Button onClick={() => {
                     let stage
                     try {
@@ -176,12 +179,36 @@ export default function App() {
                       vmCodeRef.current = sourceCodeGen(codeRef.current)
                       setOutput('')
                       stage = 'execution'
-                      run(vmCodeRef.current, outputCallback)
+                      run(
+                        vmCodeRef.current,
+                        outputConfig.output ? outputCallback : () => { },
+                        outputConfig.debug ? debugCallback : () => { },
+                      )
                       smoothScrollTo('#output')
                     } catch (e) {
                       alert('encountered error in ' + stage + ' stage:\n' + e)
                     }
                   }}>Compile & Run</Button>
+                  <Stack spacing={5} direction="row">
+                    <Checkbox
+                      isChecked={outputConfig.output}
+                      onChange={e => setOutputConfig({
+                        output: e.target.checked,
+                        debug: outputConfig.debug,
+                      })}
+                    >
+                      Output
+                    </Checkbox>
+                    <Checkbox
+                      isChecked={outputConfig.debug}
+                      onChange={e => setOutputConfig({
+                        output: outputConfig.output,
+                        debug: e.target.checked,
+                      })}
+                    >
+                      Debug
+                    </Checkbox>
+                  </Stack>
                 </Grid>
               </TabPanel>
               <TabPanel>
@@ -238,7 +265,7 @@ export default function App() {
                             <Text whiteSpace="nowrap">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;💬</Text>
                             <Text color="gray.500" fontSize="2xl" whiteSpace="nowrap">{KoalaState.open}</Text>
                           </Box>
-                          <Textarea value={output} />
+                          <Textarea value={output} readOnly />
                         </Grid>
                         <br />
                         This is the output of our program,
