@@ -3,7 +3,7 @@ use super::grammar::{
     WhenElse,
 };
 use crate::instructions::{
-    BEQZ, CALL, END, IADD, IDIV, IMUL, ISUB, LOAD, POP, PRINT, PUSH, RET, STORE,
+    BEQZ, CALL, END, IADD, IDIV, IMUL, ISUB, LOCAL_LOAD, LOCAL_STORE, POP, PRINT, PUSH, RET,
 };
 use std::collections::HashMap;
 
@@ -126,7 +126,7 @@ impl CodeGen for Statement {
                  */
                 if let Some(scope) = context.var_scope.last_mut() {
                     match scope.into_iter().position(|var| var == id) {
-                        Some(offset) => code.extend([STORE, offset as u32]),
+                        Some(offset) => code.extend([LOCAL_STORE, offset as u32]),
                         None => scope.push(id.clone()),
                     };
                 }
@@ -186,7 +186,7 @@ impl CodeGen for Expr {
                 .map(|a| a.unwrap())
                 .collect(),
             Self::Variable(name) => vec![
-                LOAD,
+                LOCAL_LOAD,
                 match context
                     .var_scope
                     .last()

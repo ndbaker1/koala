@@ -16,9 +16,10 @@ pub const FMUL: u32 = 0x7; // add ints
 pub const FDIV: u32 = 0x8; // sub ints
 
 // Variables On Call Stack
-pub const LOAD: u32 = 0x10; // load
-pub const STORE: u32 = 0x11; // store
-pub const FP_MOVE: u32 = 0x12; // update frame pointer
+pub const LOCAL_LOAD: u32 = 0x10; // load LOCAL
+pub const LOCAL_STORE: u32 = 0x11; // store LOCAL
+pub const GLOBAL_LOAD: u32 = 0x12; // load GLOBAL
+pub const GLOBAL_STORE: u32 = 0x13; // store GLOBAL
 
 // RNG
 pub const RAND: u32 = 0x20; // get random number

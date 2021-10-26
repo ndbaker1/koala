@@ -77,6 +77,7 @@ impl VirtualMachine<'_> {
             ));
         }
 
+        // Pull the opcode fetched prior
         let opcode = self.ir;
 
         match opcode {
@@ -190,7 +191,7 @@ impl VirtualMachine<'_> {
                 // Use outisde callback to pipe output
                 self.print(&msg);
             }
-            instructions::LOAD => {
+            instructions::LOCAL_LOAD => {
                 self.fetch();
                 let offset = self.ir as usize;
 
@@ -201,7 +202,7 @@ impl VirtualMachine<'_> {
                 self.stack
                     .push(self.call_stack.last().unwrap().locals[offset]);
             }
-            instructions::STORE => {
+            instructions::LOCAL_STORE => {
                 self.fetch();
                 let offset = self.ir as usize;
 
@@ -214,6 +215,8 @@ impl VirtualMachine<'_> {
                     None => panic!("no value on stack"),
                 };
             }
+            instructions::GLOBAL_LOAD => {}
+            instructions::GLOBAL_STORE => {}
             _ => { /* no-op */ }
         };
     }
