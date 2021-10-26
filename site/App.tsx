@@ -273,7 +273,7 @@ export default function App() {
                         and the corresponding 32bit <b>Instructions</b> (in hex) that are run by the Koala Virtual Machine.
                       </>
                       : <>
-                        Compile a Program!
+                        Run a Program that has Output!
                         <Text color="gray.500" fontSize="2xl" whiteSpace="nowrap">{KoalaState.open}</Text>
                       </>
                     }
