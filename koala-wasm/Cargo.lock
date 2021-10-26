@@ -65,7 +65,6 @@ dependencies = [
 name = "koala-wasm"
 version = "0.1.0"
 dependencies = [
- "console_error_panic_hook",
  "js-sys",
  "koala",
  "serde_json",
