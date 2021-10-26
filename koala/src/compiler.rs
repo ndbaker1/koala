@@ -76,10 +76,6 @@ impl CodeGen for FunctionDefinition {
                 }
                 // Pop scope since we are leaving function
                 context.var_scope.pop();
-                // Pop each Var passed through the stack by FunctionCall
-                for _ in &self.args {
-                    code.push(POP);
-                }
                 // return to caller
                 code.extend([RET]);
 
@@ -164,7 +160,7 @@ impl CodeGen for If {
         }
         // prefix the statements with the branch
         let branch_code: [u32; BRANCH_CODE_OFFSET] =
-            [BEQZ, calc_offset(&code, &code_to_execute) as u32];
+            [BEQZ, 1 + calc_offset(&code, &code_to_execute) as u32];
 
         code.extend(branch_code);
         code.extend(code_to_execute);

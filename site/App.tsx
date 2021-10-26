@@ -306,7 +306,7 @@ export default function App() {
                   fontFamily="monospace"
                   value={vmCodeRef.current
                     .reduce<string[]>((cur, val) => cur.concat(['0x' + val.toString(16).padStart(8, '0').toUpperCase()]), [])
-                    .map((inst, index) => index.toString().padStart(4, ' ') + '│' + inst)
+                    .map((inst, index) => index.toString(16).padStart(4, ' ').toUpperCase() + '│' + inst)
                     .join("\n")
                   }
                 />
