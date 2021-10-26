@@ -5,7 +5,7 @@ import ReactJson from 'react-json-view'
 
 import { VscDebugStepBack, VscRepo, VscTerminal } from 'react-icons/vsc'
 
-import { Box, Center, Container, Grid, HStack, Text } from '@chakra-ui/layout'
+import { Box, Center, Container, Grid, HStack, Link, Text } from '@chakra-ui/layout'
 import { Button } from '@chakra-ui/button'
 
 import init, { run, sourceCodeGen, parseAst } from 'koala'
@@ -99,31 +99,33 @@ export default function App() {
                     fontSize="md"
                     textAlign="left"
                   >
-                    🐨 Koala is a simple programming language that runs on a stack-based virtual machine.
+                    Koala is a simple programming language that runs on a stack-based virtual machine.
                     <br />
                     It was created as a proof-of-concept while studying compiler design and hardware virtualization.
                     <br />
                     <br />
-                    Because the entire library is written using Rust 🦀,
-                    the compiler and runtime can be ported here using WebAssembly!
+                    Test out the language right here in the browser!
+                    <br />
+                    With the help of <Link href="https://github.com/rustwasm/wasm-pack" target="_blank">wasm-pack</Link>,
+                    we can bring our Rust 🦀 code over to WebAssembly!
                   </Text>
                 </Center>
               </Box>
               <Center>
                 <HStack>
                   <Button
-                    as="a"
-                    href={repo}
-                    target="_blank"
-                    leftIcon={<VscRepo />}>
-                    More on Github
-                  </Button>
-                  <Button
                     leftIcon={<VscTerminal />}
                     onClick={() => {
                       smoothScrollTo('#editor')
                     }}>
                     Try It Out
+                  </Button>
+                  <Button
+                    as="a"
+                    href={repo}
+                    target="_blank"
+                    leftIcon={<VscRepo />}>
+                    More on Github
                   </Button>
                 </HStack>
               </Center>
