@@ -56,29 +56,29 @@ impl VirtualMachine<'_> {
     pub fn run(&mut self) {
         self.running = true;
         while self.running {
-            self.fetch();
             self.execute();
         }
     }
 
-    fn fetch(&mut self) {
-        self.ir = self.code[self.pc];
+    fn fetch(&mut self) -> u32 {
+        let inst = self.code[self.pc];
         self.pc += 1;
+        inst
     }
 
     fn execute(&mut self) {
+        // Pull the opcode fetched prior
+        let opcode = self.fetch();
+
         if DEBUG {
             self.print(&format!(
-                "\nPC: {:<3} IP: {:<#6x} SP: {:<3} stack: {:?}\n",
+                "\nPC: {:<3} IR: {:<#6x} SP: {:<3} stack: {:?}\n",
                 self.pc - 1,
-                self.ir,
+                opcode,
                 self.sp(),
                 self.stack
             ));
         }
-
-        // Pull the opcode fetched prior
-        let opcode = self.ir;
 
         match opcode {
             instructions::END => {
@@ -86,8 +86,7 @@ impl VirtualMachine<'_> {
             }
             instructions::PUSH => {
                 // Fetch the value to Load onto the Stack
-                self.fetch();
-                let immediate_val = self.ir as i32;
+                let immediate_val = self.fetch() as i32;
                 // Push the immediate Value
                 self.stack.push(immediate_val);
             }
@@ -124,15 +123,13 @@ impl VirtualMachine<'_> {
             }
             instructions::JUMP => {
                 // Fetch the address to Jump to
-                self.fetch();
-                let jump_addr = self.ir as usize;
+                let jump_addr = self.fetch() as usize;
                 // Move the Instruction Pointer to the Address
                 self.pc = jump_addr;
             }
             instructions::BEQZ | instructions::BNEZ => {
                 // Fetch the address to jump to when branching
-                self.fetch();
-                let branch_addr = self.ir as usize;
+                let branch_addr = self.fetch() as usize;
                 // Get the value on the Stack and evaluate condition based on type (opcode)
                 let val = self.stack.pop().unwrap() as u32;
                 let cond = match opcode {
@@ -149,11 +146,9 @@ impl VirtualMachine<'_> {
                 // Capture the current PC
                 let return_addr = self.pc;
                 // Fetch arg count from the stack
-                self.fetch();
-                let arg_count = self.ir;
+                let arg_count = self.fetch();
                 // Fetch the address of the call
-                self.fetch();
-                let fn_addr = self.ir as usize;
+                let fn_addr = self.fetch() as usize;
                 // Copy the args from the stack into Frame Locals
                 let locals = (0..arg_count)
                     .into_iter()
@@ -177,8 +172,7 @@ impl VirtualMachine<'_> {
             }
             instructions::PRINT => {
                 // Read the print Type (encoded/value)
-                self.fetch();
-                let print_type = self.ir;
+                let print_type = self.fetch();
                 // Get Value to Print
                 let val = self.stack.pop().unwrap();
                 // Print based on Type
@@ -192,8 +186,7 @@ impl VirtualMachine<'_> {
                 self.print(&msg);
             }
             instructions::LOCAL_LOAD => {
-                self.fetch();
-                let offset = self.ir as usize;
+                let offset = self.fetch() as usize;
 
                 if DEBUG {
                     self.print(&format!("loading with offset: {}\n", offset));
@@ -203,8 +196,7 @@ impl VirtualMachine<'_> {
                     .push(self.call_stack.last().unwrap().locals[offset]);
             }
             instructions::LOCAL_STORE => {
-                self.fetch();
-                let offset = self.ir as usize;
+                let offset = self.fetch() as usize;
 
                 if DEBUG {
                     self.print(&format!("storing with offset: {}\n", offset));
