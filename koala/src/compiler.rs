@@ -12,7 +12,7 @@ pub struct CompilerContext {
     pub var_scope: Vec<Vec<String>>,
 }
 impl CompilerContext {
-    pub fn new() -> CompilerContext {
+    pub fn new() -> Self {
         CompilerContext {
             fn_table: HashMap::new(),
             var_scope: Vec::new(),

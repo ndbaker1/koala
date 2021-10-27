@@ -32,11 +32,8 @@ pub struct Frame {
     pub return_addr: usize,
 }
 
-impl VirtualMachine<'_> {
-    pub fn new<'a>(
-        output_pipe: OutputCallback<'a>,
-        debug_pipe: OutputCallback<'a>,
-    ) -> VirtualMachine<'a> {
+impl<'a> VirtualMachine<'a> {
+    pub fn new(output_pipe: OutputCallback<'a>, debug_pipe: OutputCallback<'a>) -> Self {
         VirtualMachine {
             pc: 0,
             code: Vec::new(),
