@@ -6,7 +6,7 @@ pub struct VirtualMachine<'a> {
     /// Program Counter
     pc: usize,
     // Code Memory
-    code: Vec<u32>,
+    code: &'a [u32],
     /// Frames indicate the start of a function call,
     /// which will automatically take care of the need to track Frame Pointers
     call_stack: Vec<Frame>,
@@ -36,7 +36,7 @@ impl<'a> VirtualMachine<'a> {
     pub fn new(output_pipe: OutputCallback<'a>, debug_pipe: OutputCallback<'a>) -> Self {
         VirtualMachine {
             pc: 0,
-            code: Vec::new(),
+            code: &[],
             call_stack: Vec::new(),
             stack: Vec::new(),
             globals: Vec::new(),
@@ -46,23 +46,22 @@ impl<'a> VirtualMachine<'a> {
         }
     }
 
-    pub fn load_code(&mut self, code: &[u32]) {
-        for instruction in code {
-            self.code.push(*instruction);
-        }
-    }
-
-    pub fn run(&mut self) {
+    pub fn run(&mut self, code: &'a [u32]) {
+        // Take a reference to the Binary Code
+        self.code = code;
+        // Set Running Flag
         self.running = true;
+        // Continue executing until finished
         while self.running {
             self.execute();
         }
     }
 
     fn fetch(&mut self) -> u32 {
-        let inst = self.code[self.pc];
+        // Increment PC
         self.pc += 1;
-        inst
+        // Fetch the Data at the PC we stepped over
+        self.code[self.pc - 1]
     }
 
     fn execute(&mut self) {
@@ -130,13 +129,12 @@ impl<'a> VirtualMachine<'a> {
                 let branch_addr = self.fetch() as usize;
                 // Get the value on the Stack and evaluate condition based on type (opcode)
                 let val = self.stack.pop().unwrap() as u32;
-                let cond = match opcode {
+                // conditionally branch when corresponding statement evaluates
+                if match opcode {
                     instructions::BEQZ => val == 0,
                     instructions::BNEZ => val != 0,
                     _ => panic!("impossible path."),
-                };
-                // conditionally branch
-                if cond {
+                } {
                     self.pc = branch_addr;
                 }
             }
@@ -184,22 +182,22 @@ impl<'a> VirtualMachine<'a> {
                 self.print(&msg);
             }
             instructions::LOCAL_LOAD => {
+                // Fetch the Load offset
                 let offset = self.fetch() as usize;
 
                 self.debug(&format!("loading with offset: {}\n", offset));
 
+                // Push a variable in the current Frame onto the Stack
                 self.stack
                     .push(self.call_stack.last().unwrap().locals[offset]);
             }
             instructions::LOCAL_STORE => {
+                // Fetch the Load offset
                 let offset = self.fetch() as usize;
 
                 self.debug(&format!("storing with offset: {}\n", offset));
-
-                self.call_stack.last_mut().unwrap().locals[offset] = match self.stack.pop() {
-                    Some(val) => val,
-                    None => panic!("no value on stack"),
-                };
+                // Set a variable in the current Frame fromn the Stack
+                self.call_stack.last_mut().unwrap().locals[offset] = self.stack.pop().unwrap();
             }
             instructions::GLOBAL_LOAD => {}
             instructions::GLOBAL_STORE => {}

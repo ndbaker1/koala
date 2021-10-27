@@ -11,8 +11,7 @@ fn main() {
         let mut vm = VirtualMachine::new(&|msg: &str| print!("{}", msg), &|msg: &str| {
             print!("{}", msg)
         });
-        vm.load_code(&code);
-        vm.run();
+        vm.run(&code);
     }
 }
 

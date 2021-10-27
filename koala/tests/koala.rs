@@ -25,8 +25,7 @@ fn kvm_run_code(code: &str) -> String {
     let program = parse_code(&code).unwrap();
     let bin = program.code_gen(&mut CompilerContext::new(), 0);
     let mut kvm = VirtualMachine::new(print_callback, &|msg: &str| println!("{}", msg));
-    kvm.load_code(&bin);
-    kvm.run();
+    kvm.run(&bin);
 
     return value.take();
 }

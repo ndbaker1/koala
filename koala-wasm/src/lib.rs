@@ -32,8 +32,7 @@ pub fn run(
             .unwrap();
     };
     let mut vm = VirtualMachine::new(rust_output_callback, rust_debug_callback);
-    vm.load_code(machine_code);
-    vm.run()
+    vm.run(machine_code);
 }
 
 #[wasm_bindgen]
