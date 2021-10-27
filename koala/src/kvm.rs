@@ -196,8 +196,14 @@ impl<'a> VirtualMachine<'a> {
                 let offset = self.fetch() as usize;
 
                 self.debug(&format!("storing with offset: {}\n", offset));
+
+                let frame = self.call_stack.last_mut().unwrap();
+                // if we a referencing a new variable, then make more space
+                if offset == frame.locals.len() {
+                    frame.locals.push(0);
+                }
                 // Set a variable in the current Frame fromn the Stack
-                self.call_stack.last_mut().unwrap().locals[offset] = self.stack.pop().unwrap();
+                frame.locals[offset] = self.stack.pop().unwrap();
             }
             instructions::GLOBAL_LOAD => {}
             instructions::GLOBAL_STORE => {}
@@ -205,11 +211,11 @@ impl<'a> VirtualMachine<'a> {
         };
     }
 
-    fn print(&mut self, message: &str) {
+    fn print(&self, message: &str) {
         (self.output_pipe)(message);
     }
 
-    fn debug(&mut self, message: &str) {
+    fn debug(&self, message: &str) {
         (self.debug_pipe)(message);
     }
 

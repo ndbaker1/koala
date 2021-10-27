@@ -11,6 +11,7 @@ pub struct CompilerContext {
     pub fn_table: HashMap<String, usize>,
     pub var_scope: Vec<Vec<String>>,
 }
+
 impl CompilerContext {
     pub fn new() -> Self {
         CompilerContext {
@@ -19,6 +20,7 @@ impl CompilerContext {
         }
     }
 }
+
 /// Trait for Productions and Terminals which generate code
 pub trait CodeGen {
     fn code_gen(&self, context: &mut CompilerContext, start_addr: usize) -> Vec<u32>;
@@ -65,12 +67,10 @@ impl CodeGen for FunctionDefinition {
                 let mut code = vec![];
 
                 // Create a new scope for this function Enclosure
-                let mut new_scope = Vec::new();
-                for arg in self.args.iter() {
-                    new_scope.push(arg.clone());
-                }
+                let new_scope = self.args.iter().cloned().collect();
                 // push new scope
                 context.var_scope.push(new_scope);
+                // Recursively Generate Code
                 for stmt in &self.body {
                     code.extend(stmt.code_gen(context, start_addr + code.len() + 1));
                 }
@@ -116,15 +116,15 @@ impl CodeGen for Statement {
             Self::Assignment { id, expr } => {
                 let mut code = expr.code_gen(context, start_addr);
 
-                /*
-                 * This functions as a part of Semantic analysis,
-                 * Since we can determine if we are using an undefined varaible later on
-                 */
                 if let Some(scope) = context.var_scope.last_mut() {
-                    match scope.into_iter().position(|var| var == id) {
-                        Some(offset) => code.extend([LOCAL_STORE, offset as u32]),
-                        None => scope.push(id.clone()),
+                    let offset = match scope.into_iter().position(|var| var == id) {
+                        Some(offset) => offset,
+                        None => {
+                            scope.push(id.clone());
+                            scope.len() - 1
+                        }
                     };
+                    code.extend([LOCAL_STORE, offset as u32]);
                 }
 
                 return code;
