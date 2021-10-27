@@ -3,7 +3,8 @@ use super::grammar::{
     WhenElse,
 };
 use crate::instructions::{
-    BEQZ, CALL, END, IADD, IDIV, IMUL, ISUB, LOCAL_LOAD, LOCAL_STORE, POP, PRINT, PUSH, RET,
+    AND, BEQZ, CALL, END, EQ, GT, GTE, IADD, IDIV, IMUL, ISUB, LOCAL_LOAD, LOCAL_STORE, LT, LTE,
+    NEQ, OR, POP, PRINT, PUSH, RET,
 };
 use std::collections::HashMap;
 
@@ -216,6 +217,14 @@ impl CodeGen for BinExpr {
             BinOp::Minus => code.push(ISUB),
             BinOp::Mul => code.push(IMUL),
             BinOp::Div => code.push(IDIV),
+            BinOp::Less => code.push(LT),
+            BinOp::LessOrEqual => code.push(LTE),
+            BinOp::Greater => code.push(GT),
+            BinOp::GreaterOrEqual => code.push(GTE),
+            BinOp::Equal => code.push(EQ),
+            BinOp::NotEqual => code.push(NEQ),
+            BinOp::Or => code.push(OR),
+            BinOp::And => code.push(AND),
         };
 
         return code;

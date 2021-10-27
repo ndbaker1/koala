@@ -48,7 +48,7 @@ export default function App() {
 
   const startBlinker = () => {
     const min = 2
-    const max = 7
+    const max = 5
     let blinker: NodeJS.Timeout
     (function blink() {
       setMainKoala(state => {

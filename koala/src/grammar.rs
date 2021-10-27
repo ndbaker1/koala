@@ -102,6 +102,14 @@ pub enum BinOp {
     Minus,
     Div,
     Mul,
+    Less,
+    LessOrEqual,
+    Greater,
+    GreaterOrEqual,
+    Equal,
+    NotEqual,
+    Or,
+    And,
 }
 
 #[derive(Deserialize, Serialize)]

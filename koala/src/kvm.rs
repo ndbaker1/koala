@@ -90,6 +90,39 @@ impl<'a> VirtualMachine<'a> {
             instructions::POP => {
                 self.stack.pop();
             }
+            instructions::GT
+            | instructions::GTE
+            | instructions::LT
+            | instructions::LTE
+            | instructions::EQ
+            | instructions::NEQ => {
+                let first = self.stack.pop().unwrap();
+                let second = self.stack.pop().unwrap();
+
+                let result = match opcode {
+                    instructions::GT => first > second,
+                    instructions::GTE => first >= second,
+                    instructions::LT => first < second,
+                    instructions::LTE => first <= second,
+                    instructions::EQ => first == second,
+                    instructions::NEQ => first != second,
+                    _ => return,
+                };
+
+                self.stack.push(result as i32);
+            }
+            instructions::OR | instructions::AND => {
+                let first = self.stack.pop().unwrap() != 0;
+                let second = self.stack.pop().unwrap() != 0;
+
+                let result = match opcode {
+                    instructions::OR => first || second,
+                    instructions::AND => first && second,
+                    _ => return,
+                };
+
+                self.stack.push(result as i32);
+            }
             instructions::IADD | instructions::IMUL | instructions::ISUB | instructions::IDIV => {
                 let first = self.stack.pop().unwrap();
                 let second = self.stack.pop().unwrap();

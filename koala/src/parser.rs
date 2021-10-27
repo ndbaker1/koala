@@ -24,6 +24,14 @@ peg::parser! {
             / "/" { BinOp::Div }
             / "+" { BinOp::Plus }
             / "-" { BinOp::Minus }
+            / "<=" { BinOp::LessOrEqual }
+            / ">=" { BinOp::GreaterOrEqual }
+            / "<" { BinOp::Less }
+            / ">" { BinOp::Greater }
+            / "!=" { BinOp::NotEqual }
+            / "==" { BinOp::Equal }
+            / "||" { BinOp::Or }
+            / "&&" { BinOp::And }
 
         rule args() -> Vec<Expr>
             = _ expr:expr() _ "," _ args:args() {
@@ -191,6 +199,16 @@ parser_tests! {
         let a = 2
         b = 3
         print((a+b))
+    }
+    ",
+    comparisons_parser_test: "
+    fn main() {
+        if (1 < 2) { }
+        if (2 > 1) { }
+        if (1 == 1) { }
+        if (1 != 2) { }
+        if (1 <= 1) { }
+        if (1 >= 1) { }
     }
     ",
 }

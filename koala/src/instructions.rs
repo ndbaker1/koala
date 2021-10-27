@@ -21,8 +21,17 @@ pub const LOCAL_STORE: u32 = 0x11; // store LOCAL
 pub const GLOBAL_LOAD: u32 = 0x12; // load GLOBAL
 pub const GLOBAL_STORE: u32 = 0x13; // store GLOBAL
 
-// RNG
-pub const RAND: u32 = 0x20; // get random number
+// Comparison Operators
+pub const LT: u32 = 0x20; // less than
+pub const LTE: u32 = 0x21; // less than equal
+pub const GT: u32 = 0x22; // greater than
+pub const GTE: u32 = 0x23; // greater than equal
+pub const EQ: u32 = 0x24; // equal to
+pub const NEQ: u32 = 0x25; // not equal to
+
+// Local Opeators
+pub const OR: u32 = 0x26; // OR
+pub const AND: u32 = 0x27; // AND
 
 // Control Flow
 pub const JUMP: u32 = 0x30; // jump
@@ -39,3 +48,6 @@ pub const PRINT: u32 = 0x50; // print
 // Stack Ops
 pub const PUSH: u32 = 0x60; // load immediate
 pub const POP: u32 = 0x61; // pop stack
+
+// RNG
+pub const RAND: u32 = 0xFF; // get random number

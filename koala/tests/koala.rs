@@ -100,4 +100,50 @@ code_tests! {
   }
   ",
   "3"),
+  comparisons_test: ("
+  fn main() {
+    if (1 < 2) {
+      print(1)
+    }
+    if (2 > 1) {
+      print(2)
+    }
+    if (1 == 1) {
+      print(3)
+    }
+    if (1 != 2) {
+      print(4)
+    }
+    if (1 <= 1) {
+      print(5)
+    }
+    if (1 >= 1) {
+      print(6)
+    }
+  }
+  ",
+  "123456"),
+  logical_test: ("
+  fn main() {
+    if (1 || 2) {
+      print(1)
+    }
+    if (2 && 1) {
+      print(2)
+    }
+    if (1 || 0) {
+      print(3)
+    }
+    if (1 && 0) {
+      print(4)
+    }
+    if (0 && 0) {
+      print(5)
+    }
+    if (0 || 0) {
+      print(6)
+    }
+  }
+  ",
+  "123"),
 }

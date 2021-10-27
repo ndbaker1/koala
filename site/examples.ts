@@ -1,31 +1,30 @@
 
 export const KoalaCodeExampe = `
 fn main() {
-  print(fact(5))
-  print(fib(5))
+  print(fact(6))
+  print(fib(6))
 }
 
+// Fibonacci 
 fn fib(n) {
-  if n {
-    if (n-1) {
-      return (fib((n-1)) + fib((n-2)))
-    }
+  if (n > 0) {
+    return (fib((n-1)) + fib((n-2)))
   }
   return 1
 }
 
 // Factorial
 fn fact(n) {
-  if n {
+  if (n != 0) {
     return (fact((n-1)) * n)
   }
   return 1
 }
 
 // WIP
-// - local & global variables
-// - logical binary operators
+// - global variables
 // - when (expr) -> { ... } syntax
 // - arrays ?
+
 
 `
