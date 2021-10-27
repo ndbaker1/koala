@@ -55,11 +55,11 @@ code_tests! {
   fn main() {
     if 1 { if 0 {} }
     if 0 { if 1 {} }
-    if 1 { if 1 {} }
+    if 1 { if 1 { print(5) } }
     if 0 { if 0 {} }
   }
   ",
-  ""),
+  "5"),
   fib_test: ("
   fn main() {
     print(fib(4))
