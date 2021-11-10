@@ -3,8 +3,8 @@ use super::grammar::{
     WhenElse,
 };
 use crate::instructions::{
-    AND, BEQZ, CALL, END, EQ, GT, GTE, IADD, IDIV, IMUL, ISUB, LOCAL_LOAD, LOCAL_STORE, LT, LTE,
-    NEQ, OR, POP, PRINT, PUSH, RET,
+    AND, BEQZ, CALL, END, EQ, GT, GTE, IADD, IDIV, IMUL, ISUB, LOCAL_ARR_LOAD, LOCAL_LOAD,
+    LOCAL_STORE, LT, LTE, NEQ, OR, POP, PRINT, PUSH, RET,
 };
 use std::collections::HashMap;
 
@@ -20,8 +20,19 @@ impl CompilerContext {
             var_scope: Vec::new(),
         }
     }
+    pub fn find_var_index(&self, var_name: &str) -> usize {
+        match self
+            .var_scope
+            .last()
+            .unwrap()
+            .iter()
+            .position(|var| var == var_name)
+        {
+            Some(index) => index,
+            None => panic!("usage of undefined array variable! '{}'", var_name),
+        }
+    }
 }
-
 /// Trait for Productions and Terminals which generate code
 pub trait CodeGen {
     fn code_gen(&self, context: &mut CompilerContext, start_addr: usize) -> Vec<u32>;
@@ -114,7 +125,7 @@ impl CodeGen for Statement {
                 .into_iter()
                 .chain([PRINT, 1])
                 .collect(),
-            Self::Assignment { id, expr } => {
+            Self::Assignment { id, expr, .. } => {
                 let mut code = expr.code_gen(context, start_addr);
 
                 if let Some(scope) = context.var_scope.last_mut() {
@@ -146,6 +157,7 @@ impl CodeGen for Statement {
         }
     }
 }
+
 impl CodeGen for If {
     fn code_gen(&self, context: &mut CompilerContext, start_addr: usize) -> Vec<u32> {
         // generate code for the comparison Expression
@@ -186,19 +198,14 @@ impl CodeGen for Expr {
                 .take_while(|a| a.is_some())
                 .map(|a| a.unwrap())
                 .collect(),
-            Self::Variable(name) => vec![
-                LOCAL_LOAD,
-                match context
-                    .var_scope
-                    .last()
-                    .unwrap()
-                    .iter()
-                    .position(|var| var == name)
-                {
-                    Some(index) => index as u32,
-                    None => panic!("usage of undefined variable! '{}'", name),
-                },
-            ],
+            Self::ArrayIndex { id, expr } => {
+                let mut code = Vec::new();
+                code.push(context.find_var_index(id) as u32);
+                code.extend(expr.code_gen(context, start_addr));
+                code.push(LOCAL_ARR_LOAD);
+                return code;
+            }
+            Self::Variable(name) => vec![LOCAL_LOAD, context.find_var_index(name) as u32],
             Self::FunctionCall(func_call) => func_call.code_gen(context, start_addr),
             Self::BinExpr(bin_expr) => bin_expr.code_gen(context, start_addr),
         }

@@ -67,8 +67,8 @@ code_tests! {
   
   fn fib(n) {
     if n {
-      if (n-1) {
-        return (fib((n-1)) + fib((n-2)))
+      if n-1 {
+        return fib(n-1) + fib(n-2)
       }
     }
     return 1
@@ -81,8 +81,8 @@ code_tests! {
   }
   
   fn t(a) {
-    a((a-1))
-    a((a-2))
+    a(a-1)
+    a(a-2)
   }
 
   fn a(a){
@@ -102,47 +102,48 @@ code_tests! {
   "3"),
   comparisons_test: ("
   fn main() {
-    if (1 < 2) {
-      print(1)
-    }
-    if (2 > 1) {
-      print(2)
-    }
-    if (1 == 1) {
-      print(3)
-    }
-    if (1 != 2) {
-      print(4)
-    }
-    if (1 <= 1) {
-      print(5)
-    }
-    if (1 >= 1) {
-      print(6)
-    }
+    if 1 < 2 { print(1) }
+    if 2 > 1 { print(2) }
+    if 1 == 1 { print(3) }
+    if 1 != 2 { print(4) }
+    if 1 <= 1 { print(5) }
+    if 1 >= 1 { print(6) }
   }
   ",
   "123456"),
   logical_test: ("
   fn main() {
-    if (1 || 2) {
-      print(1)
-    }
-    if (2 && 1) {
-      print(2)
-    }
-    if (1 || 0) {
-      print(3)
-    }
-    if (1 && 0) {
-      print(4)
-    }
-    if (0 && 0) {
-      print(5)
-    }
-    if (0 || 0) {
-      print(6)
-    }
+    if 1 || 2 { print(1) }
+    if 2 && 1 { print(2) }
+    if 1 || 0 { print(3) }
+    if 1 && 0 { print(4) }
+    if 0 && 0 { print(5) }
+    if 0 || 0 { print(6) }
+  }
+  ",
+  "123"),
+  nested_math1_test: ("
+  fn main() {
+    print((5 + 3) + 2)
+  }
+  ",
+  "10"),
+  nested_math2_test: ("
+  fn main() {
+    print(2 + (5 + 3))
+  }
+  ",
+  "10"),
+  nested_math3_test: ("
+  fn main() {
+    print(2 + ((5 + 3) - ((2 * 3  - ((10/2))))))
+  }
+  ",
+  "9"),
+  array_test: ("
+  fn main() {
+    let a[3] = [1,12,123]
+    print(a[1+1])
   }
   ",
   "123"),

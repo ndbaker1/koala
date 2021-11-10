@@ -238,6 +238,40 @@ impl<'a> VirtualMachine<'a> {
                 // Set a variable in the current Frame fromn the Stack
                 frame.locals[offset] = self.stack.pop().unwrap();
             }
+            instructions::LOCAL_ARR_LOAD => {
+                // Fetch the Load offset
+                let index = self.stack.pop().unwrap() as usize;
+                let offset = self.stack.pop().unwrap() as usize;
+
+                self.debug(&format!(
+                    "loading with offset: {} and index {}\n",
+                    offset, index
+                ));
+
+                // Push a variable in the current Frame onto the Stack
+                self.stack
+                    .push(self.call_stack.last().unwrap().locals[offset + index]);
+            }
+            instructions::LOCAL_ARR_STORE => {
+                // Fetch the Load offset
+                let offset = self.fetch() as usize;
+                let index = self.fetch() as usize;
+
+                self.debug(&format!(
+                    "storing with offset: {} and index {}\n",
+                    offset, index
+                ));
+
+                let frame = self.call_stack.last_mut().unwrap();
+                // if we a referencing a new variable, then make more space
+                if offset == frame.locals.len() {
+                    for _ in 0..index {
+                        frame.locals.push(0);
+                    }
+                }
+                // Set a variable in the current Frame fromn the Stack
+                frame.locals[offset + index] = self.stack.pop().unwrap();
+            }
             instructions::GLOBAL_LOAD => {}
             instructions::GLOBAL_STORE => {}
             _ => { /* no-op */ }

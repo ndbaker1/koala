@@ -4,7 +4,6 @@ use std::{env::args, path::Path};
 
 fn main() {
     let files: Vec<String> = args().collect();
-
     if files.len() > 1 {
         let code = read_file(&files[1]);
 

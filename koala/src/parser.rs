@@ -34,12 +34,12 @@ peg::parser! {
             / "&&" { BinOp::And }
 
         rule args() -> Vec<Expr>
-            = _ expr:expr() _ "," _ args:args() {
+            = _ expr:compound_expr() _ "," _ args:args() {
                 let mut all = vec![expr];
                 all.extend(args);
                 return all;
             }
-            / _ expr:expr() _ { vec![expr] }
+            / _ expr:compound_expr() _ { vec![expr] }
             / _ { vec![] }
 
         rule function_call() -> FunctionCall
@@ -55,26 +55,36 @@ peg::parser! {
             / _ { vec![] }
 
         rule expr() -> Expr
-            = "(" _ op1:expr() _ binop:binop() _ op2:expr() _ ")" { Expr::BinExpr(Box::new(BinExpr { binop, op2, op1 })) }
-            / "(" _ expr:expr() _ ")" { expr }
-            / "true" { Expr::BoolLit(true) }
+            = "true" { Expr::BoolLit(true) }
             / "false" { Expr::BoolLit(false) }
             / f:function_call() { Expr::FunctionCall(f) }
             / id:identifier() { Expr::Variable(id) }
             / n:number() { Expr::IntLit(n) }
 
+        rule compound_expr() -> Expr
+            = "(" _ op1:compound_expr() _ ")" _ binop:binop() _ op2:compound_expr() {
+                Expr::BinExpr(Box::new(BinExpr { binop, op2, op1 }))
+            }
+            / op1:expr() _ binop:binop() _ op2:compound_expr() {
+                Expr::BinExpr(Box::new(BinExpr { binop, op2, op1 }))
+            }
+            / "(" _ expr:compound_expr() _ ")" { expr }
+            / expr()
+
         rule statement() -> Statement
-            = "print(" _ e:expr() _ ")" { Statement::Print(e) }
-            / "if" _ expr:expr() _ "{" stmts:statements() "}" {
+            = "print(" _ e:compound_expr() _ ")" { Statement::Print(e) }
+            / "if" _ expr:compound_expr() _ "{" stmts:statements() "}" {
                 Statement::If(Box::new(If {
                     expr,
                     stmts,
                 }))
             }
-            / "return" _ expr:expr() { Statement::ReturnExpr(expr) }
+            / "return" _ expr:compound_expr() { Statement::ReturnExpr(expr) }
             / "return" { Statement::Return }
             / f:function_call() { Statement::FunctionCall(f) }
-            / "let "? _ id:identifier() _ "=" _ expr:expr() { Statement::Assignment { id, expr } }
+            / "let "? _ id:identifier() _ "=" _ expr:compound_expr() { Statement::Assignment { id, array_size: None, expr } }
+            / "let "? _ id:identifier() "[" n:number() "]" _ "=" _ expr:compound_expr() { Statement::Assignment { id, array_size: None, expr } }
+            / "let "? _ id:identifier() "[" expr:compound_expr() "]" _ "=" _ expr:compound_expr() { Statement::Assignment { id, array_size: None, expr } }
 
         rule statements() -> Vec<Statement>
             = _ stmt:statement() _ stmts:statements() {
@@ -141,7 +151,7 @@ parser_tests! {
     }
     ",
     binary_expr_test: "fn main() {
-        print((2+5))
+        print(2+5)
     }",
     function_call_test: "
     fn main() {
@@ -183,7 +193,7 @@ parser_tests! {
         test(4, 6)
     }
     fn test(n, m) {
-        return (n * m)
+        return n * m
     }
     ",
     factorial_test: "
@@ -191,24 +201,24 @@ parser_tests! {
         factorial(4)
     }
     fn factorial(n) {
-        return (factorial((n - 1)) * n)
+        return factorial(n - 1) * n
     }
     ",
     variable_usages_test: "
     fn main() {
         let a = 2
         b = 3
-        print((a+b))
+        print(a+b)
     }
     ",
     comparisons_parser_test: "
     fn main() {
-        if (1 < 2) { }
-        if (2 > 1) { }
-        if (1 == 1) { }
-        if (1 != 2) { }
-        if (1 <= 1) { }
-        if (1 >= 1) { }
+        if 1 < 2 { }
+        if 2 > 1 { }
+        if 1 == 1 { }
+        if 1 != 2 { }
+        if 1 <= 1 { }
+        if 1 >= 1 { }
     }
     ",
 }

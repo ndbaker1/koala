@@ -21,6 +21,11 @@ pub const LOCAL_STORE: u32 = 0x11; // store LOCAL
 pub const GLOBAL_LOAD: u32 = 0x12; // load GLOBAL
 pub const GLOBAL_STORE: u32 = 0x13; // store GLOBAL
 
+pub const LOCAL_ARR_LOAD: u32 = 0x14; // load LOCAL array
+pub const LOCAL_ARR_STORE: u32 = 0x15; // store LOCAL array
+pub const GLOBAL_ARR_LOAD: u32 = 0x16; // load GLOBAL array
+pub const GLOBAL_ARR_STORE: u32 = 0x17; // store GLOBAL array
+
 // Comparison Operators
 pub const LT: u32 = 0x20; // less than
 pub const LTE: u32 = 0x21; // less than equal

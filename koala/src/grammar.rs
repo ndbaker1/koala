@@ -32,7 +32,11 @@ pub enum Statement {
     Print(Expr),
     Return,
     ReturnExpr(Expr),
-    Assignment { id: String, expr: Expr },
+    Assignment {
+        id: String,
+        array_size: Option<usize>,
+        expr: Expr,
+    },
     FunctionCall(FunctionCall),
 }
 
@@ -84,6 +88,7 @@ pub enum Expr {
     BoolLit(bool),
     StringLit(String),
     IntLit(u32),
+    ArrayIndex { id: String, expr: Box<Expr> },
     Variable(String),
     BinExpr(Box<BinExpr>),
     FunctionCall(FunctionCall),
