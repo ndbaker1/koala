@@ -143,8 +143,9 @@ code_tests! {
   array_test: ("
   fn main() {
     let a[3] = [1,12,123]
-    print(a[1+1])
+    let b = a[2]
+    print(a[2] + a[2])
   }
   ",
-  "123"),
+  "246"),
 }

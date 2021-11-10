@@ -32,10 +32,14 @@ pub enum Statement {
     Print(Expr),
     Return,
     ReturnExpr(Expr),
-    Assignment {
+    VarAssignment {
         id: String,
-        array_size: Option<usize>,
         expr: Expr,
+    },
+    ArrayAssignment {
+        id: String,
+        size: Option<Expr>,
+        elements: Option<Vec<Expr>>,
     },
     FunctionCall(FunctionCall),
 }
@@ -83,7 +87,7 @@ pub enum WhenElse {
 /// | string
 /// | int
 /// | Variable
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub enum Expr {
     BoolLit(bool),
     StringLit(String),
@@ -94,14 +98,14 @@ pub enum Expr {
     FunctionCall(FunctionCall),
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct BinExpr {
     pub op1: Expr,
     pub op2: Expr,
     pub binop: BinOp,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub enum BinOp {
     Plus,
     Minus,
@@ -117,7 +121,7 @@ pub enum BinOp {
     And,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct FunctionCall {
     pub id: String,
     pub args: Vec<Expr>,

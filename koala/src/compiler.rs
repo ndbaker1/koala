@@ -6,6 +6,7 @@ use crate::instructions::{
     AND, BEQZ, CALL, END, EQ, GT, GTE, IADD, IDIV, IMUL, ISUB, LOCAL_ARR_LOAD, LOCAL_LOAD,
     LOCAL_STORE, LT, LTE, NEQ, OR, POP, PRINT, PUSH, RET,
 };
+use core::panic;
 use std::collections::HashMap;
 
 pub struct CompilerContext {
@@ -125,7 +126,7 @@ impl CodeGen for Statement {
                 .into_iter()
                 .chain([PRINT, 1])
                 .collect(),
-            Self::Assignment { id, expr, .. } => {
+            Self::VarAssignment { id, expr } => {
                 let mut code = expr.code_gen(context, start_addr);
 
                 if let Some(scope) = context.var_scope.last_mut() {
@@ -137,6 +138,40 @@ impl CodeGen for Statement {
                         }
                     };
                     code.extend([LOCAL_STORE, offset as u32]);
+                }
+
+                return code;
+            }
+            Self::ArrayAssignment { id, size, elements } => {
+                let mut code = Vec::new();
+
+                // read the size to loop over it
+                if let Some(Expr::IntLit(array_size)) = size {
+                    // check that the size is equal to the element length !
+                    if let Some(elements_vec) = elements {
+                        if elements_vec.len() as u32 != *array_size {
+                            panic!("cannot have specified array size different from array literal.")
+                        }
+                    }
+                    // fetch the starting variable
+                    if let Some(scope) = context.var_scope.last_mut() {
+                        let offset = match scope.into_iter().position(|var| var == id) {
+                            Some(offset) => offset,
+                            None => {
+                                scope.push(id.clone());
+                                scope.len() - 1
+                            }
+                        } as u32;
+                        // loop over size
+                        for index in 0..*array_size {
+                            code.extend(if let Some(elements_vec) = elements {
+                                elements_vec[index as usize].code_gen(context, start_addr)
+                            } else {
+                                vec![PUSH, 0]
+                            });
+                            code.extend([LOCAL_STORE, offset + index]);
+                        }
+                    }
                 }
 
                 return code;
@@ -200,7 +235,7 @@ impl CodeGen for Expr {
                 .collect(),
             Self::ArrayIndex { id, expr } => {
                 let mut code = Vec::new();
-                code.push(context.find_var_index(id) as u32);
+                code.extend([PUSH, context.find_var_index(id) as u32]);
                 code.extend(expr.code_gen(context, start_addr));
                 code.push(LOCAL_ARR_LOAD);
                 return code;

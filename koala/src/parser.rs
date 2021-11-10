@@ -57,8 +57,13 @@ peg::parser! {
         rule expr() -> Expr
             = "true" { Expr::BoolLit(true) }
             / "false" { Expr::BoolLit(false) }
+            // Function Calls
             / f:function_call() { Expr::FunctionCall(f) }
+            // Array Indexing Rule
+            / id:identifier() "[" _ expr:compound_expr() _ "]" { Expr::ArrayIndex{ id, expr: Box::new(expr) } }
+            // Variable Load Rule
             / id:identifier() { Expr::Variable(id) }
+            // Plain Number
             / n:number() { Expr::IntLit(n) }
 
         rule compound_expr() -> Expr
@@ -82,9 +87,18 @@ peg::parser! {
             / "return" _ expr:compound_expr() { Statement::ReturnExpr(expr) }
             / "return" { Statement::Return }
             / f:function_call() { Statement::FunctionCall(f) }
-            / "let "? _ id:identifier() _ "=" _ expr:compound_expr() { Statement::Assignment { id, array_size: None, expr } }
-            / "let "? _ id:identifier() "[" n:number() "]" _ "=" _ expr:compound_expr() { Statement::Assignment { id, array_size: None, expr } }
-            / "let "? _ id:identifier() "[" expr:compound_expr() "]" _ "=" _ expr:compound_expr() { Statement::Assignment { id, array_size: None, expr } }
+            / "let "? _ id:identifier() _ "=" _ expr:compound_expr() {
+                Statement::VarAssignment { id, expr }
+            }
+            / "let "? _ id:identifier() "[" size:number() "]" _ "=" _ "[" elements:args() "]" {
+                Statement::ArrayAssignment { id, size: Some(Expr::IntLit(size)), elements: Some(elements) }
+            }
+            / "let "? _ id:identifier() "[" size:compound_expr() "]" _ "=" _ "[" elements:args() "]" {
+                Statement::ArrayAssignment { id, size: Some(size), elements: Some(elements) }
+            }
+            / "let "? _ id:identifier() "[" size:compound_expr() "]" {
+                Statement::ArrayAssignment { id, size: Some(size), elements: None }
+            }
 
         rule statements() -> Vec<Statement>
             = _ stmt:statement() _ stmts:statements() {
