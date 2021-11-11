@@ -3,8 +3,8 @@ use super::grammar::{
     WhenElse,
 };
 use crate::instructions::{
-    AND, BEQZ, CALL, END, EQ, GLOBAL_LOAD, GLOBAL_STORE, GT, GTE, IADD, IDIV, IMUL, ISUB,
-    LOCAL_ARR_LOAD, LOCAL_LOAD, LOCAL_STORE, LT, LTE, NEQ, OR, POP, PRINT, PUSH, RET,
+    AND, BEQZ, CALL, END, EQ, GLOBAL_ARR_LOAD, GLOBAL_LOAD, GLOBAL_STORE, GT, GTE, IADD, IDIV,
+    IMUL, ISUB, LOCAL_ARR_LOAD, LOCAL_LOAD, LOCAL_STORE, LT, LTE, NEQ, OR, POP, PRINT, PUSH, RET,
 };
 use core::panic;
 use std::collections::HashMap;
@@ -15,6 +15,11 @@ pub struct CompilerContext {
     pub global_vars: Vec<String>,
 }
 
+pub enum ScopeType {
+    Global,
+    Local,
+}
+
 impl CompilerContext {
     pub fn new() -> Self {
         CompilerContext {
@@ -23,6 +28,18 @@ impl CompilerContext {
             global_vars: Vec::new(),
         }
     }
+
+    pub fn find_var_index(&self, var_name: &str) -> Result<(ScopeType, usize), String> {
+        if let Ok(index) = self.find_local_var_index(var_name) {
+            return Ok((ScopeType::Local, index));
+        }
+        if let Ok(index) = self.find_global_var_index(var_name) {
+            return Ok((ScopeType::Global, index));
+        }
+
+        return Err(format!("could not find variable with id: {}", var_name));
+    }
+
     pub fn find_local_var_index(&self, var_name: &str) -> Result<usize, String> {
         match self
             .local_var_scope
@@ -150,34 +167,34 @@ impl CodeGen for Statement {
             .collect(),
             Self::VarAssignment { id, expr, global } => {
                 let mut code = expr.code_gen(context, start_addr);
-                let mut offset = 0;
-                if *global {
-                    offset = match context.find_global_var_index(id) {
-                        Ok(var_index) => var_index,
-                        Err(_) => {
+
+                let offset = match context.find_var_index(id) {
+                    Ok(pair) => pair.1,
+                    Err(_) => {
+                        if *global {
                             context.global_vars.push(id.clone());
                             context.global_vars.len() - 1
+                        } else {
+                            let scope = context.local_var_scope.last_mut().unwrap();
+                            scope.push(id.clone());
+                            scope.len() - 1
                         }
-                    };
-                } else {
-                    if let Some(scope) = context.local_var_scope.last_mut() {
-                        offset = match scope.into_iter().position(|var| var == id) {
-                            Some(off) => off,
-                            None => {
-                                scope.push(id.clone());
-                                scope.len() - 1
-                            }
-                        };
                     }
-                }
+                };
 
                 code.extend([
                     if *global { GLOBAL_STORE } else { LOCAL_STORE },
                     offset as u32,
                 ]);
+
                 return code;
             }
-            Self::ArrayAssignment { id, size, elements } => {
+            Self::ArrayAssignment {
+                id,
+                size,
+                elements,
+                global,
+            } => {
                 let mut code = Vec::new();
 
                 // read the size to loop over it
@@ -189,23 +206,31 @@ impl CodeGen for Statement {
                         }
                     }
                     // fetch the starting variable
-                    if let Some(scope) = context.local_var_scope.last_mut() {
-                        let offset = match scope.into_iter().position(|var| var == id) {
-                            Some(offset) => offset,
-                            None => {
+                    let offset = match context.find_var_index(id) {
+                        Ok(pair) => pair.1,
+                        Err(_) => {
+                            if *global {
+                                context.global_vars.push(id.clone());
+                                context.global_vars.len() - 1
+                            } else {
+                                let scope = context.local_var_scope.last_mut().unwrap();
                                 scope.push(id.clone());
                                 scope.len() - 1
                             }
-                        } as u32;
-                        // loop over size
-                        for index in 0..*array_size {
-                            code.extend(if let Some(elements_vec) = elements {
-                                elements_vec[index as usize].code_gen(context, start_addr)
-                            } else {
-                                vec![PUSH, 0]
-                            });
-                            code.extend([LOCAL_STORE, offset + index]);
                         }
+                    };
+
+                    // loop over size
+                    for index in 0..*array_size {
+                        code.extend(if let Some(elements_vec) = elements {
+                            elements_vec[index as usize].code_gen(context, start_addr)
+                        } else {
+                            vec![PUSH, 0]
+                        });
+                        code.extend([
+                            if *global { GLOBAL_STORE } else { LOCAL_STORE },
+                            index + offset as u32,
+                        ]);
                     }
                 }
 
@@ -270,23 +295,39 @@ impl CodeGen for Expr {
                 .collect(),
             Self::ArrayIndex { id, expr } => {
                 let mut code = Vec::new();
-                code.extend([PUSH, context.find_local_var_index(id).unwrap() as u32]);
+
+                let (scope_type, index) = match context.find_var_index(id) {
+                    Ok(pair) => pair,
+                    Err(_) => {
+                        context.global_vars.push(id.clone());
+                        (ScopeType::Global, context.global_vars.len() - 1)
+                    }
+                };
+
+                code.extend([PUSH, index as u32]);
                 code.extend(expr.code_gen(context, start_addr));
-                code.push(LOCAL_ARR_LOAD);
+                code.push(match scope_type {
+                    ScopeType::Local => LOCAL_ARR_LOAD,
+                    ScopeType::Global => GLOBAL_ARR_LOAD,
+                });
                 return code;
             }
             Self::Variable { id } => {
-                if let Ok(index) = context.find_local_var_index(id) {
-                    return vec![LOCAL_LOAD, index as u32];
-                }
-                let index = match context.find_global_var_index(id) {
-                    Ok(index) => index,
+                let (scope_type, index) = match context.find_var_index(id) {
+                    Ok(pair) => pair,
                     Err(_) => {
                         context.global_vars.push(id.clone());
-                        context.global_vars.len() - 1
+                        (ScopeType::Global, context.global_vars.len() - 1)
                     }
                 };
-                return vec![GLOBAL_LOAD, index as u32];
+
+                vec![
+                    match scope_type {
+                        ScopeType::Global => GLOBAL_LOAD,
+                        ScopeType::Local => LOCAL_LOAD,
+                    },
+                    index as u32,
+                ]
             }
             Self::FunctionCall(func_call) => func_call.code_gen(context, start_addr),
             Self::BinExpr(bin_expr) => bin_expr.code_gen(context, start_addr),

@@ -54,8 +54,15 @@ peg::parser! {
             / _ id:identifier() _ { vec![id] }
             / _ { vec![] }
 
-        rule global_assign() -> Statement
-             = "global" _ id:identifier() _ "=" _ expr:compound_expr() { Statement::VarAssignment { id, expr, global: true } }
+        rule global_statement() -> Statement
+            = "global" _ id:identifier() _ "=" _ expr:compound_expr() { Statement::VarAssignment { id, expr, global: true } }
+            / "global" _ array:array() {
+                match array {
+                    Statement::ArrayAssignment { id, size, elements, global } =>
+                        Statement::ArrayAssignment { id, size, elements, global: true },
+                    _ => panic!("incorrect type for global array"),
+                }
+            }
 
         rule expr() -> Expr
             = "true" { Expr::BoolLit(true) }
@@ -83,13 +90,13 @@ peg::parser! {
         /// Array Assignment/Initializations
         rule array() -> Statement
             = "let "? _ id:identifier() "[" size:number() "]" _ "=" _ "[" elements:args() "]" {
-                Statement::ArrayAssignment { id, size: Some(Expr::IntLit(size)), elements: Some(elements) }
+                Statement::ArrayAssignment { id, size: Some(Expr::IntLit(size)), elements: Some(elements), global: false }
             }
             / "let "? _ id:identifier() "[" size:compound_expr() "]" _ "=" _ "[" elements:args() "]" {
-                Statement::ArrayAssignment { id, size: Some(size), elements: Some(elements) }
+                Statement::ArrayAssignment { id, size: Some(size), elements: Some(elements), global: false }
             }
             / "let "? _ id:identifier() "[" size:compound_expr() "]" {
-                Statement::ArrayAssignment { id, size: Some(size), elements: None }
+                Statement::ArrayAssignment { id, size: Some(size), elements: None, global: false }
             }
 
         rule print() -> Statement
@@ -114,7 +121,7 @@ peg::parser! {
             = print()
             / if()
             / return()
-            / global_assign()
+            / global_statement()
             // Function Call
             / f:function_call() { Statement::FunctionCall(f) }
             // Variable Assignment

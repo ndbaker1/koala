@@ -148,7 +148,7 @@ code_tests! {
   }
   ",
   "246"),
-  globals_test: ("
+  global_var_test: ("
   fn main() {
     global theglobal = 2
     foo()
@@ -159,4 +159,15 @@ code_tests! {
   }
   ",
   "2"),
+  global_array_test: ("
+  fn main() {
+    global theglobal[2] = [6,7]
+    foo()
+  }
+
+  fn foo() {
+    print(theglobal[0])
+  }
+  ",
+  "6"),
 }

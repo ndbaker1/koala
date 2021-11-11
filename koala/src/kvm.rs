@@ -295,6 +295,19 @@ impl<'a> VirtualMachine<'a> {
                     self.globals.push(val);
                 }
             }
+            instructions::GLOBAL_ARR_LOAD => {
+                // Fetch the Load offset
+                let index = self.stack.pop().unwrap() as usize;
+                let offset = self.stack.pop().unwrap() as usize;
+
+                self.debug(&format!(
+                    "loading with offset: {} and index {}\n",
+                    offset, index
+                ));
+
+                // Push a variable in the current Frame onto the Stack
+                self.stack.push(self.globals[offset + index]);
+            }
             _ => { /* no-op */ }
         };
     }

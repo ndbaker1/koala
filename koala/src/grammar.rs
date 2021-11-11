@@ -28,6 +28,7 @@ pub struct FunctionDefinition {
 pub enum Statement {
     If(Box<If>),
     IfElse(Box<IfElse>),
+    While(Box<While>),
     When(Box<When>),
     Print {
         expr: Option<Expr>,
@@ -44,6 +45,7 @@ pub enum Statement {
         id: String,
         size: Option<Expr>,
         elements: Option<Vec<Expr>>,
+        global: bool,
     },
     FunctionCall(FunctionCall),
 }
@@ -63,6 +65,13 @@ pub struct IfElse {
     pub expr: Expr,
     pub stmts: Vec<Statement>,
     pub else_stmts: Vec<Statement>,
+}
+
+#[derive(Deserialize, Serialize)]
+
+pub struct While {
+    pub cond: Expr,
+    pub stmts: Vec<Statement>,
 }
 
 /// When:
