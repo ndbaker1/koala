@@ -44,11 +44,16 @@ pub enum Statement {
         expr: Expr,
         global: bool,
     },
-    ArrayAssignment {
+    ArrayInstantiation {
         id: String,
         size: Option<Expr>,
         elements: Option<Vec<Expr>>,
         global: bool,
+    },
+    ArrayIndexAssignment {
+        id: String,
+        index: Expr,
+        expr: Expr,
     },
     FunctionCall(FunctionCall),
 }

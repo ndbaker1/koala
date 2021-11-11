@@ -58,8 +58,8 @@ peg::parser! {
             = "global" _ id:identifier() _ "=" _ expr:compound_expr() { Statement::VarAssignment { id, expr, global: true } }
             / "global" _ array:array() {
                 match array {
-                    Statement::ArrayAssignment { id, size, elements, global } =>
-                        Statement::ArrayAssignment { id, size, elements, global: true },
+                    Statement::ArrayInstantiation { id, size, elements, global } =>
+                        Statement::ArrayInstantiation { id, size, elements, global: true },
                     _ => panic!("incorrect type for global array"),
                 }
             }
@@ -90,13 +90,16 @@ peg::parser! {
         /// Array Assignment/Initializations
         rule array() -> Statement
             = "let "? _ id:identifier() "[" size:number() "]" _ "=" _ "[" elements:args() "]" {
-                Statement::ArrayAssignment { id, size: Some(Expr::IntLit(size)), elements: Some(elements), global: false }
+                Statement::ArrayInstantiation { id, size: Some(Expr::IntLit(size)), elements: Some(elements), global: false }
             }
             / "let "? _ id:identifier() "[" size:compound_expr() "]" _ "=" _ "[" elements:args() "]" {
-                Statement::ArrayAssignment { id, size: Some(size), elements: Some(elements), global: false }
+                Statement::ArrayInstantiation { id, size: Some(size), elements: Some(elements), global: false }
+            }
+            / "let "? _ id:identifier() "[" index:compound_expr() "]" _ "=" _ expr:compound_expr() {
+                Statement::ArrayIndexAssignment { id, index, expr  }
             }
             / "let "? _ id:identifier() "[" size:compound_expr() "]" {
-                Statement::ArrayAssignment { id, size: Some(size), elements: None, global: false }
+                Statement::ArrayInstantiation { id, size: Some(size), elements: None, global: false }
             }
 
         rule print() -> Statement

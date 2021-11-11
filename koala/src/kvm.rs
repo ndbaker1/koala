@@ -1,5 +1,5 @@
 use crate::instructions;
-use std::panic;
+use std::{collections::HashMap, panic};
 
 /// The Koala Language Virtual Machine
 pub struct VirtualMachine<'a> {
@@ -13,7 +13,7 @@ pub struct VirtualMachine<'a> {
     // Executtion/Data Stack
     stack: Vec<i32>,
     /// Globals
-    globals: Vec<i32>,
+    globals: HashMap<usize, i32>,
     /// Running flag
     running: bool,
     /// Callback for Interaction with the outside world
@@ -39,7 +39,7 @@ impl<'a> VirtualMachine<'a> {
             code: &[],
             call_stack: Vec::new(),
             stack: Vec::new(),
-            globals: Vec::new(),
+            globals: HashMap::new(),
             running: false,
             output_pipe,
             debug_pipe,
@@ -284,7 +284,7 @@ impl<'a> VirtualMachine<'a> {
                 self.debug(&format!("global loading with offset: {}\n", offset));
 
                 // Push a variable in the current Frame onto the Stack
-                self.stack.push(self.globals[offset]);
+                self.stack.push(self.globals[&offset]);
             }
             instructions::GLOBAL_STORE => {
                 // Fetch the Load offset
@@ -295,12 +295,7 @@ impl<'a> VirtualMachine<'a> {
                 // Set a variable in the current Frame from the Stack
                 let val = self.stack.pop().unwrap();
 
-                // if we a referencing a new variable, then make more space
-                if offset == self.globals.len() {
-                    self.globals.push(val);
-                } else {
-                    self.globals[offset] = val;
-                }
+                self.globals.insert(offset, val);
             }
             instructions::GLOBAL_ARR_LOAD => {
                 // Fetch the Load offset
@@ -313,7 +308,21 @@ impl<'a> VirtualMachine<'a> {
                 ));
 
                 // Push a variable in the current Frame onto the Stack
-                self.stack.push(self.globals[offset + index]);
+                self.stack.push(self.globals[&(offset + index)]);
+            }
+            instructions::GLOBAL_ARR_STORE => {
+                // Fetch the Load offset
+                let offset = self.stack.pop().unwrap() as usize;
+                let index = self.stack.pop().unwrap() as usize;
+
+                self.debug(&format!(
+                    "storing with offset: {} and index {}\n",
+                    offset, index
+                ));
+
+                // Set a variable in the global set
+                self.globals
+                    .insert(offset + index, self.stack.pop().unwrap());
             }
             _ => { /* no-op */ }
         };

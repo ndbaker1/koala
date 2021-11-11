@@ -265,7 +265,7 @@ export default function App() {
                             <Text whiteSpace="nowrap">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;💬</Text>
                             <Text color="gray.500" fontSize="2xl" whiteSpace="nowrap">{KoalaState.open}</Text>
                           </Box>
-                          <Textarea value={output} readOnly />
+                          <Textarea value={output} readOnly minH="16rem" />
                         </Grid>
                         <br />
                         This is the output of our program,

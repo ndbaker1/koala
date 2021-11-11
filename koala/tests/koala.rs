@@ -180,5 +180,42 @@ code_tests! {
   }
   ",
   "234"),
+  dfs_matrix_test: ("
+  fn main() {
+    dfs_demo()
+  }
 
+  fn dfs_demo() {
+    global graph[25] = [
+      0,0,0,2,0,
+      0,0,1,0,1,
+      1,0,0,3,0,
+      4,3,3,0,1,
+      0,2,1,0,0
+    ]
+
+    global visited[5] = [0,0,0,0,0]
+
+    dfs(0)
+  }
+
+  // DFS
+  fn dfs(row) {
+    print(row)
+    visited[row] = 1
+    let goTo = 0
+    while goTo < 5 {
+      if (visited[goTo] == 0) && (graph[m2d(row, goTo, 5)] != 0) {
+        dfs(goTo, row)
+      }
+      goTo = goTo + 1
+    }
+  }
+
+  fn m2d(row, col, width) {
+    return (width * row) + col
+  }
+
+  ",
+  "03124"),
 }

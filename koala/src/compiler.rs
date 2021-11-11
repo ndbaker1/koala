@@ -3,9 +3,9 @@ use super::grammar::{
     WhenElse,
 };
 use crate::instructions::{
-    AND, BEQZ, CALL, END, EQ, GLOBAL_ARR_LOAD, GLOBAL_LOAD, GLOBAL_STORE, GT, GTE, IADD, IDIV,
-    IMUL, ISUB, JUMP, LOCAL_ARR_LOAD, LOCAL_LOAD, LOCAL_STORE, LT, LTE, NEQ, OR, POP, PRINT, PUSH,
-    RET,
+    AND, BEQZ, CALL, END, EQ, GLOBAL_ARR_LOAD, GLOBAL_ARR_STORE, GLOBAL_LOAD, GLOBAL_STORE, GT,
+    GTE, IADD, IDIV, IMUL, ISUB, JUMP, LOCAL_ARR_LOAD, LOCAL_ARR_STORE, LOCAL_LOAD, LOCAL_STORE,
+    LT, LTE, NEQ, OR, POP, PRINT, PUSH, RET,
 };
 use core::panic;
 use std::collections::HashMap;
@@ -13,7 +13,7 @@ use std::collections::HashMap;
 pub struct CompilerContext {
     pub fn_table: HashMap<String, usize>,
     pub local_var_scope: Vec<Vec<String>>,
-    pub global_vars: Vec<String>,
+    pub global_vars: (HashMap<String, usize>, usize),
 }
 
 pub enum ScopeType {
@@ -26,7 +26,7 @@ impl CompilerContext {
         CompilerContext {
             fn_table: HashMap::new(),
             local_var_scope: Vec::new(),
-            global_vars: Vec::new(),
+            global_vars: (HashMap::new(), 0),
         }
     }
 
@@ -53,9 +53,10 @@ impl CompilerContext {
             None => Err(format!("usage of undefined local variable! '{}'", var_name)),
         }
     }
+
     pub fn find_global_var_index(&self, var_name: &str) -> Result<usize, String> {
-        match self.global_vars.iter().position(|var| var == var_name) {
-            Some(index) => Ok(index),
+        match self.global_vars.0.get(var_name) {
+            Some(index) => Ok(*index),
             None => Err(format!(
                 "usage of undefined global variable! '{}'",
                 var_name
@@ -63,6 +64,7 @@ impl CompilerContext {
         }
     }
 }
+
 /// Trait for Productions and Terminals which generate code
 pub trait CodeGen {
     fn code_gen(&self, context: &mut CompilerContext, start_addr: usize) -> Vec<u32>;
@@ -72,6 +74,8 @@ const ENTRY_POINT: &str = "main";
 
 impl CodeGen for Program {
     fn code_gen(&self, context: &mut CompilerContext, _: usize) -> Vec<u32> {
+        context.global_vars = self.create_global_var_table();
+
         let mut code = Vec::new();
 
         const BOOTSTRAP_LENGTH: usize = 4;
@@ -107,7 +111,6 @@ impl CodeGen for FunctionDefinition {
                 context.fn_table.insert(self.id.clone(), start_addr);
 
                 let mut code = vec![];
-
                 // Create a new scope for this function Enclosure
                 let new_scope = self.args.iter().cloned().collect();
                 // push new scope
@@ -173,8 +176,12 @@ impl CodeGen for Statement {
                     Ok(pair) => pair.1,
                     Err(_) => {
                         if *global {
-                            context.global_vars.push(id.clone());
-                            context.global_vars.len() - 1
+                            context
+                                .global_vars
+                                .0
+                                .insert(id.clone(), context.global_vars.1);
+                            context.global_vars.1 += 1;
+                            context.global_vars.1 - 1
                         } else {
                             let scope = context.local_var_scope.last_mut().unwrap();
                             scope.push(id.clone());
@@ -184,13 +191,35 @@ impl CodeGen for Statement {
                 };
 
                 code.extend([
-                    if *global { GLOBAL_STORE } else { LOCAL_STORE },
+                    match global {
+                        true => GLOBAL_STORE,
+                        false => LOCAL_STORE,
+                    },
                     offset as u32,
                 ]);
 
                 return code;
             }
-            Self::ArrayAssignment {
+            Self::ArrayIndexAssignment { id, index, expr } => {
+                let mut code = expr.code_gen(context, start_addr);
+
+                code.extend(index.code_gen(context, start_addr));
+
+                let (scope_type, offset) = match context.find_var_index(id) {
+                    Ok(pair) => pair,
+                    Err(_) => panic!("array index failure"),
+                };
+
+                code.extend([PUSH, offset as u32]);
+
+                code.push(match scope_type {
+                    ScopeType::Global => GLOBAL_ARR_STORE,
+                    ScopeType::Local => LOCAL_ARR_STORE,
+                });
+
+                return code;
+            }
+            Self::ArrayInstantiation {
                 id,
                 size,
                 elements,
@@ -211,8 +240,12 @@ impl CodeGen for Statement {
                         Ok(pair) => pair.1,
                         Err(_) => {
                             if *global {
-                                context.global_vars.push(id.clone());
-                                context.global_vars.len() - 1
+                                context
+                                    .global_vars
+                                    .0
+                                    .insert(id.clone(), context.global_vars.1);
+                                context.global_vars.1 += 1;
+                                context.global_vars.1 - 1
                             } else {
                                 let scope = context.local_var_scope.last_mut().unwrap();
                                 scope.push(id.clone());
@@ -237,6 +270,7 @@ impl CodeGen for Statement {
 
                 return code;
             }
+
             Self::FunctionCall(func_call) => func_call
                 .code_gen(context, start_addr)
                 .into_iter()
@@ -331,10 +365,7 @@ impl CodeGen for Expr {
 
                 let (scope_type, index) = match context.find_var_index(id) {
                     Ok(pair) => pair,
-                    Err(_) => {
-                        context.global_vars.push(id.clone());
-                        (ScopeType::Global, context.global_vars.len() - 1)
-                    }
+                    Err(_) => panic!("cound not find array index to load."),
                 };
 
                 code.extend([PUSH, index as u32]);
@@ -343,14 +374,20 @@ impl CodeGen for Expr {
                     ScopeType::Local => LOCAL_ARR_LOAD,
                     ScopeType::Global => GLOBAL_ARR_LOAD,
                 });
+
                 return code;
             }
             Self::Variable { id } => {
                 let (scope_type, index) = match context.find_var_index(id) {
                     Ok(pair) => pair,
                     Err(_) => {
-                        context.global_vars.push(id.clone());
-                        (ScopeType::Global, context.global_vars.len() - 1)
+                        context
+                            .global_vars
+                            .0
+                            .insert(id.clone(), context.global_vars.1);
+                        context.global_vars.1 += 1;
+
+                        (ScopeType::Global, context.global_vars.1 - 1)
                     }
                 };
 
@@ -409,5 +446,37 @@ impl CodeGen for WhenCase {
 impl CodeGen for WhenElse {
     fn code_gen(&self, context: &mut CompilerContext, start_addr: usize) -> Vec<u32> {
         vec![]
+    }
+}
+
+impl Program {
+    fn create_global_var_table(&self) -> (HashMap<String, usize>, usize) {
+        let mut table: HashMap<String, usize> = HashMap::new();
+        let mut index: usize = 0;
+        for def in &self.0 {
+            for stmt in &def.body {
+                match stmt {
+                    Statement::ArrayInstantiation {
+                        id, size, global, ..
+                    } => {
+                        if *global {
+                            if let Some(Expr::IntLit(incr)) = size {
+                                table.insert(id.to_string(), index as usize);
+                                index += *incr as usize;
+                            }
+                        }
+                    }
+                    Statement::VarAssignment { id, global, .. } => {
+                        if *global {
+                            table.insert(id.to_string(), index);
+                            index += 1;
+                        }
+                    }
+                    _ => { /* no-op */ }
+                }
+            }
+        }
+
+        return (table, index);
     }
 }
