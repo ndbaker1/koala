@@ -148,6 +148,14 @@ code_tests! {
   }
   ",
   "246"),
+  multi_array_test: ("
+  fn main() {
+    let a[3] = [1,12,123]
+    let v[3] = [22,33,44]
+    print(a[1] + v[1])
+  }
+  ",
+  "45"),
   global_var_test: ("
   fn main() {
     global theglobal = 2

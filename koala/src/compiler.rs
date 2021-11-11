@@ -11,11 +11,15 @@ use core::panic;
 use std::collections::HashMap;
 
 pub struct CompilerContext {
+    /// Table of Function names and their address
     pub fn_table: HashMap<String, usize>,
-    pub local_var_scope: Vec<Vec<String>>,
+    /// A Frame-based set of indexes for local variables
+    pub local_var_scope: Vec<(HashMap<String, usize>, usize)>,
+    /// A Table with global variable addresses paired with the current memory offset
     pub global_vars: (HashMap<String, usize>, usize),
 }
 
+/// Denote between Global and Local Variables during Code Gen
 pub enum ScopeType {
     Global,
     Local,
@@ -30,6 +34,7 @@ impl CompilerContext {
         }
     }
 
+    /// Search both variables for an ID. (first local then global)
     pub fn find_var_index(&self, var_name: &str) -> Result<(ScopeType, usize), String> {
         if let Ok(index) = self.find_local_var_index(var_name) {
             return Ok((ScopeType::Local, index));
@@ -41,19 +46,15 @@ impl CompilerContext {
         return Err(format!("could not find variable with id: {}", var_name));
     }
 
+    /// search the current Frame's local variable set for an ID
     pub fn find_local_var_index(&self, var_name: &str) -> Result<usize, String> {
-        match self
-            .local_var_scope
-            .last()
-            .unwrap()
-            .iter()
-            .position(|var| var == var_name)
-        {
-            Some(index) => Ok(index),
+        match self.local_var_scope.last().unwrap().0.get(var_name) {
+            Some(index) => Ok(*index),
             None => Err(format!("usage of undefined local variable! '{}'", var_name)),
         }
     }
 
+    /// Search the global varable table for an ID
     pub fn find_global_var_index(&self, var_name: &str) -> Result<usize, String> {
         match self.global_vars.0.get(var_name) {
             Some(index) => Ok(*index),
@@ -70,6 +71,7 @@ pub trait CodeGen {
     fn code_gen(&self, context: &mut CompilerContext, start_addr: usize) -> Vec<u32>;
 }
 
+/// Function ID to bootstrap the executable
 const ENTRY_POINT: &str = "main";
 
 impl CodeGen for Program {
@@ -111,10 +113,19 @@ impl CodeGen for FunctionDefinition {
                 context.fn_table.insert(self.id.clone(), start_addr);
 
                 let mut code = vec![];
+                let mut scope_size = 0;
                 // Create a new scope for this function Enclosure
-                let new_scope = self.args.iter().cloned().collect();
+                let new_scope = self
+                    .args
+                    .iter()
+                    .cloned()
+                    .map(|id| {
+                        scope_size += 1;
+                        (id, scope_size - 1)
+                    })
+                    .collect::<HashMap<String, usize>>();
                 // push new scope
-                context.local_var_scope.push(new_scope);
+                context.local_var_scope.push((new_scope, scope_size));
                 // Recursively Generate Code
                 for stmt in &self.body {
                     code.extend(stmt.code_gen(context, start_addr + code.len() + 1));
@@ -161,35 +172,35 @@ impl CodeGen for Statement {
                 }
                 None => vec![],
             }
+            // Append the codegen for non-empty print statements
             .into_iter()
-            // Conditionally add newline print
-            .chain(if *newline {
-                vec![PUSH, 10, PRINT, 2]
-            } else {
-                vec![]
+            // Conditionally append the newline printing steps
+            .chain(match *newline {
+                true => vec![PUSH, 10, PRINT, 2],
+                false => vec![],
             })
             .collect(),
             Self::VarAssignment { id, expr, global } => {
+                // generate value to be stored
                 let mut code = expr.code_gen(context, start_addr);
 
+                // find the offset of the variable in either the global or local set
                 let offset = match context.find_var_index(id) {
                     Ok(pair) => pair.1,
                     Err(_) => {
                         if *global {
-                            context
-                                .global_vars
-                                .0
-                                .insert(id.clone(), context.global_vars.1);
-                            context.global_vars.1 += 1;
-                            context.global_vars.1 - 1
+                            // global variables are accounted for in the AST prescan, so we shouldnt see this fail.
+                            panic!("failed to find global variable by id: {}", id);
                         } else {
+                            // add the local variable to the frame if we are seeing it for the first time
                             let scope = context.local_var_scope.last_mut().unwrap();
-                            scope.push(id.clone());
-                            scope.len() - 1
+                            scope.0.insert(id.clone(), scope.1);
+                            scope.1 += 1;
+                            scope.1 - 1
                         }
                     }
                 };
-
+                // append the appropriate Store procedure for global or local variables, with the given offset
                 code.extend([
                     match global {
                         true => GLOBAL_STORE,
@@ -201,17 +212,19 @@ impl CodeGen for Statement {
                 return code;
             }
             Self::ArrayIndexAssignment { id, index, expr } => {
+                // generate value to be stored
                 let mut code = expr.code_gen(context, start_addr);
-
+                // generate the value of the array subscript index
                 code.extend(index.code_gen(context, start_addr));
-
+                // fetch the array index
+                // since we cannot arbitrarily define new array values, this failure should not be accepted.
                 let (scope_type, offset) = match context.find_var_index(id) {
                     Ok(pair) => pair,
                     Err(_) => panic!("array index failure"),
                 };
 
+                // push the offset onto the stack in order to read it in the ARRAY_STORE procedures
                 code.extend([PUSH, offset as u32]);
-
                 code.push(match scope_type {
                     ScopeType::Global => GLOBAL_ARR_STORE,
                     ScopeType::Local => LOCAL_ARR_STORE,
@@ -239,6 +252,7 @@ impl CodeGen for Statement {
                     let offset = match context.find_var_index(id) {
                         Ok(pair) => pair.1,
                         Err(_) => {
+                            // move along
                             if *global {
                                 context
                                     .global_vars
@@ -247,9 +261,12 @@ impl CodeGen for Statement {
                                 context.global_vars.1 += 1;
                                 context.global_vars.1 - 1
                             } else {
+                                // add the local variable to the frame if we are seeing it for the first time
                                 let scope = context.local_var_scope.last_mut().unwrap();
-                                scope.push(id.clone());
-                                scope.len() - 1
+                                scope.0.insert(id.clone(), scope.1);
+                                // this involves moving the memory boundary along by the size of the array
+                                scope.1 += *array_size as usize;
+                                scope.1 - *array_size as usize
                             }
                         }
                     };
@@ -365,7 +382,7 @@ impl CodeGen for Expr {
 
                 let (scope_type, index) = match context.find_var_index(id) {
                     Ok(pair) => pair,
-                    Err(_) => panic!("cound not find array index to load."),
+                    Err(_) => panic!("cound not find array index to load for id: {}.", id),
                 };
 
                 code.extend([PUSH, index as u32]);
