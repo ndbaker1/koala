@@ -24,7 +24,5 @@ fn fact(n) {
 // WIP
 // - global variables
 // - when (expr) -> { ... } syntax
-// - arrays ?
-
 
 `

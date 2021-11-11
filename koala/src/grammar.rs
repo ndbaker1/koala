@@ -29,7 +29,10 @@ pub enum Statement {
     If(Box<If>),
     IfElse(Box<IfElse>),
     When(Box<When>),
-    Print(Expr),
+    Print {
+        expr: Option<Expr>,
+        newline: bool,
+    },
     Return,
     ReturnExpr(Expr),
     VarAssignment {

@@ -77,7 +77,10 @@ peg::parser! {
             / expr()
 
         rule statement() -> Statement
-            = "print(" _ e:compound_expr() _ ")" { Statement::Print(e) }
+            = "print(" _ expr:compound_expr() _ ")" { Statement::Print{ expr: Some(expr), newline: false} }
+            / "println(" _ expr:compound_expr() _ ")" { Statement::Print{ expr: Some(expr), newline: true } }
+            / "print()" { Statement::Print{ expr: None, newline: false} }
+            / "println()" { Statement::Print{ expr: None, newline: true } }
             / "if" _ expr:compound_expr() _ "{" stmts:statements() "}" {
                 Statement::If(Box::new(If {
                     expr,

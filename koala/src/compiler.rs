@@ -121,11 +121,22 @@ impl CodeGen for FunctionCall {
 impl CodeGen for Statement {
     fn code_gen(&self, context: &mut CompilerContext, start_addr: usize) -> Vec<u32> {
         match self {
-            Self::Print(expr) => expr
-                .code_gen(context, start_addr)
-                .into_iter()
-                .chain([PRINT, 1])
-                .collect(),
+            Self::Print { expr, newline } => match expr {
+                Some(e) => {
+                    let mut code = e.code_gen(context, start_addr);
+                    code.extend([PRINT, 1]);
+                    code
+                }
+                None => vec![],
+            }
+            .into_iter()
+            // Conditionally add newline print
+            .chain(if *newline {
+                vec![PUSH, 10, PRINT, 2]
+            } else {
+                vec![]
+            })
+            .collect(),
             Self::VarAssignment { id, expr } => {
                 let mut code = expr.code_gen(context, start_addr);
 
