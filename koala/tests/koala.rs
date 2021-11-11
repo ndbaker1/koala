@@ -148,4 +148,15 @@ code_tests! {
   }
   ",
   "246"),
+  globals_test: ("
+  fn main() {
+    global theglobal = 2
+    foo()
+  }
+
+  fn foo() {
+    print(theglobal)
+  }
+  ",
+  "2"),
 }

@@ -69,12 +69,13 @@ impl<'a> VirtualMachine<'a> {
         let opcode = self.fetch();
 
         self.debug(&format!(
-            "\nPC: {:<3} IR: {:<#6x} SP: {:<3} stack: {:?} frame: {:#?}\n",
+            "\nPC: {:<3} IR: {:<#6x} SP: {:<3} stack: {:?} frame: {:#?} globals: {:?}\n",
             self.pc - 1,
             opcode,
             self.sp(),
             self.stack,
             self.call_stack,
+            self.globals,
         ));
 
         match opcode {
@@ -233,10 +234,10 @@ impl<'a> VirtualMachine<'a> {
                 let frame = self.call_stack.last_mut().unwrap();
                 // if we a referencing a new variable, then make more space
                 if offset == frame.locals.len() {
-                    frame.locals.push(0);
+                    // Set a variable in the current Frame fromn the Stack
+                    let val = self.stack.pop().unwrap();
+                    frame.locals.push(val);
                 }
-                // Set a variable in the current Frame fromn the Stack
-                frame.locals[offset] = self.stack.pop().unwrap();
             }
             instructions::LOCAL_ARR_LOAD => {
                 // Fetch the Load offset
@@ -272,8 +273,28 @@ impl<'a> VirtualMachine<'a> {
                 // Set a variable in the current Frame fromn the Stack
                 frame.locals[offset + index] = self.stack.pop().unwrap();
             }
-            instructions::GLOBAL_LOAD => {}
-            instructions::GLOBAL_STORE => {}
+            instructions::GLOBAL_LOAD => {
+                // Fetch the Load offset
+                let offset = self.fetch() as usize;
+
+                self.debug(&format!("global loading with offset: {}\n", offset));
+
+                // Push a variable in the current Frame onto the Stack
+                self.stack.push(self.globals[offset]);
+            }
+            instructions::GLOBAL_STORE => {
+                // Fetch the Load offset
+                let offset = self.fetch() as usize;
+
+                self.debug(&format!("global storing with offset: {}\n", offset));
+
+                // if we a referencing a new variable, then make more space
+                if offset == self.globals.len() {
+                    // Set a variable in the current Frame fromn the Stack
+                    let val = self.stack.pop().unwrap();
+                    self.globals.push(val);
+                }
+            }
             _ => { /* no-op */ }
         };
     }

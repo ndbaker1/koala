@@ -3,34 +3,45 @@ use super::grammar::{
     WhenElse,
 };
 use crate::instructions::{
-    AND, BEQZ, CALL, END, EQ, GT, GTE, IADD, IDIV, IMUL, ISUB, LOCAL_ARR_LOAD, LOCAL_LOAD,
-    LOCAL_STORE, LT, LTE, NEQ, OR, POP, PRINT, PUSH, RET,
+    AND, BEQZ, CALL, END, EQ, GLOBAL_LOAD, GLOBAL_STORE, GT, GTE, IADD, IDIV, IMUL, ISUB,
+    LOCAL_ARR_LOAD, LOCAL_LOAD, LOCAL_STORE, LT, LTE, NEQ, OR, POP, PRINT, PUSH, RET,
 };
 use core::panic;
 use std::collections::HashMap;
 
 pub struct CompilerContext {
     pub fn_table: HashMap<String, usize>,
-    pub var_scope: Vec<Vec<String>>,
+    pub local_var_scope: Vec<Vec<String>>,
+    pub global_vars: Vec<String>,
 }
 
 impl CompilerContext {
     pub fn new() -> Self {
         CompilerContext {
             fn_table: HashMap::new(),
-            var_scope: Vec::new(),
+            local_var_scope: Vec::new(),
+            global_vars: Vec::new(),
         }
     }
-    pub fn find_var_index(&self, var_name: &str) -> usize {
+    pub fn find_local_var_index(&self, var_name: &str) -> Result<usize, String> {
         match self
-            .var_scope
+            .local_var_scope
             .last()
             .unwrap()
             .iter()
             .position(|var| var == var_name)
         {
-            Some(index) => index,
-            None => panic!("usage of undefined array variable! '{}'", var_name),
+            Some(index) => Ok(index),
+            None => Err(format!("usage of undefined local variable! '{}'", var_name)),
+        }
+    }
+    pub fn find_global_var_index(&self, var_name: &str) -> Result<usize, String> {
+        match self.global_vars.iter().position(|var| var == var_name) {
+            Some(index) => Ok(index),
+            None => Err(format!(
+                "usage of undefined global variable! '{}'",
+                var_name
+            )),
         }
     }
 }
@@ -82,13 +93,13 @@ impl CodeGen for FunctionDefinition {
                 // Create a new scope for this function Enclosure
                 let new_scope = self.args.iter().cloned().collect();
                 // push new scope
-                context.var_scope.push(new_scope);
+                context.local_var_scope.push(new_scope);
                 // Recursively Generate Code
                 for stmt in &self.body {
                     code.extend(stmt.code_gen(context, start_addr + code.len() + 1));
                 }
                 // Pop scope since we are leaving function
-                context.var_scope.pop();
+                context.local_var_scope.pop();
                 // return to caller
                 code.extend([RET]);
 
@@ -137,20 +148,33 @@ impl CodeGen for Statement {
                 vec![]
             })
             .collect(),
-            Self::VarAssignment { id, expr } => {
+            Self::VarAssignment { id, expr, global } => {
                 let mut code = expr.code_gen(context, start_addr);
-
-                if let Some(scope) = context.var_scope.last_mut() {
-                    let offset = match scope.into_iter().position(|var| var == id) {
-                        Some(offset) => offset,
-                        None => {
-                            scope.push(id.clone());
-                            scope.len() - 1
+                let mut offset = 0;
+                if *global {
+                    offset = match context.find_global_var_index(id) {
+                        Ok(var_index) => var_index,
+                        Err(_) => {
+                            context.global_vars.push(id.clone());
+                            context.global_vars.len() - 1
                         }
                     };
-                    code.extend([LOCAL_STORE, offset as u32]);
+                } else {
+                    if let Some(scope) = context.local_var_scope.last_mut() {
+                        offset = match scope.into_iter().position(|var| var == id) {
+                            Some(off) => off,
+                            None => {
+                                scope.push(id.clone());
+                                scope.len() - 1
+                            }
+                        };
+                    }
                 }
 
+                code.extend([
+                    if *global { GLOBAL_STORE } else { LOCAL_STORE },
+                    offset as u32,
+                ]);
                 return code;
             }
             Self::ArrayAssignment { id, size, elements } => {
@@ -165,7 +189,7 @@ impl CodeGen for Statement {
                         }
                     }
                     // fetch the starting variable
-                    if let Some(scope) = context.var_scope.last_mut() {
+                    if let Some(scope) = context.local_var_scope.last_mut() {
                         let offset = match scope.into_iter().position(|var| var == id) {
                             Some(offset) => offset,
                             None => {
@@ -246,12 +270,24 @@ impl CodeGen for Expr {
                 .collect(),
             Self::ArrayIndex { id, expr } => {
                 let mut code = Vec::new();
-                code.extend([PUSH, context.find_var_index(id) as u32]);
+                code.extend([PUSH, context.find_local_var_index(id).unwrap() as u32]);
                 code.extend(expr.code_gen(context, start_addr));
                 code.push(LOCAL_ARR_LOAD);
                 return code;
             }
-            Self::Variable(name) => vec![LOCAL_LOAD, context.find_var_index(name) as u32],
+            Self::Variable { id } => {
+                if let Ok(index) = context.find_local_var_index(id) {
+                    return vec![LOCAL_LOAD, index as u32];
+                }
+                let index = match context.find_global_var_index(id) {
+                    Ok(index) => index,
+                    Err(_) => {
+                        context.global_vars.push(id.clone());
+                        context.global_vars.len() - 1
+                    }
+                };
+                return vec![GLOBAL_LOAD, index as u32];
+            }
             Self::FunctionCall(func_call) => func_call.code_gen(context, start_addr),
             Self::BinExpr(bin_expr) => bin_expr.code_gen(context, start_addr),
         }

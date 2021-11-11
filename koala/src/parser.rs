@@ -54,6 +54,9 @@ peg::parser! {
             / _ id:identifier() _ { vec![id] }
             / _ { vec![] }
 
+        rule global_assign() -> Statement
+             = "global" _ id:identifier() _ "=" _ expr:compound_expr() { Statement::VarAssignment { id, expr, global: true } }
+
         rule expr() -> Expr
             = "true" { Expr::BoolLit(true) }
             / "false" { Expr::BoolLit(false) }
@@ -62,7 +65,7 @@ peg::parser! {
             // Array Indexing Rule
             / id:identifier() "[" _ expr:compound_expr() _ "]" { Expr::ArrayIndex{ id, expr: Box::new(expr) } }
             // Variable Load Rule
-            / id:identifier() { Expr::Variable(id) }
+            / id:identifier() { Expr::Variable { id } }
             // Plain Number
             / n:number() { Expr::IntLit(n) }
 
@@ -76,24 +79,10 @@ peg::parser! {
             / "(" _ expr:compound_expr() _ ")" { expr }
             / expr()
 
-        rule statement() -> Statement
-            = "print(" _ expr:compound_expr() _ ")" { Statement::Print{ expr: Some(expr), newline: false} }
-            / "println(" _ expr:compound_expr() _ ")" { Statement::Print{ expr: Some(expr), newline: true } }
-            / "print()" { Statement::Print{ expr: None, newline: false} }
-            / "println()" { Statement::Print{ expr: None, newline: true } }
-            / "if" _ expr:compound_expr() _ "{" stmts:statements() "}" {
-                Statement::If(Box::new(If {
-                    expr,
-                    stmts,
-                }))
-            }
-            / "return" _ expr:compound_expr() { Statement::ReturnExpr(expr) }
-            / "return" { Statement::Return }
-            / f:function_call() { Statement::FunctionCall(f) }
-            / "let "? _ id:identifier() _ "=" _ expr:compound_expr() {
-                Statement::VarAssignment { id, expr }
-            }
-            / "let "? _ id:identifier() "[" size:number() "]" _ "=" _ "[" elements:args() "]" {
+
+        /// Array Assignment/Initializations
+        rule array() -> Statement
+            = "let "? _ id:identifier() "[" size:number() "]" _ "=" _ "[" elements:args() "]" {
                 Statement::ArrayAssignment { id, size: Some(Expr::IntLit(size)), elements: Some(elements) }
             }
             / "let "? _ id:identifier() "[" size:compound_expr() "]" _ "=" _ "[" elements:args() "]" {
@@ -102,6 +91,35 @@ peg::parser! {
             / "let "? _ id:identifier() "[" size:compound_expr() "]" {
                 Statement::ArrayAssignment { id, size: Some(size), elements: None }
             }
+
+        rule print() -> Statement
+            = "print(" _ expr:compound_expr() _ ")" { Statement::Print{ expr: Some(expr), newline: false} }
+            / "println(" _ expr:compound_expr() _ ")" { Statement::Print{ expr: Some(expr), newline: true } }
+            / "print()" { Statement::Print{ expr: None, newline: false} }
+            / "println()" { Statement::Print{ expr: None, newline: true } }
+
+        rule if() -> Statement
+            = "if" _ expr:compound_expr() _ "{" stmts:statements() "}" {
+                Statement::If(Box::new(If {
+                    expr,
+                    stmts,
+                }))
+            }
+
+        rule return() -> Statement
+            = "return" _ expr:compound_expr() { Statement::ReturnExpr(expr) }
+            / "return" { Statement::Return }
+
+        rule statement() -> Statement
+            = print()
+            / if()
+            / return()
+            / global_assign()
+            // Function Call
+            / f:function_call() { Statement::FunctionCall(f) }
+            // Variable Assignment
+            / "let "? _ id:identifier() _ "=" _ expr:compound_expr() { Statement::VarAssignment { id, expr, global: false } }
+            / array()
 
         rule statements() -> Vec<Statement>
             = _ stmt:statement() _ stmts:statements() {

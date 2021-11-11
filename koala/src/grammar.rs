@@ -38,6 +38,7 @@ pub enum Statement {
     VarAssignment {
         id: String,
         expr: Expr,
+        global: bool,
     },
     ArrayAssignment {
         id: String,
@@ -96,7 +97,7 @@ pub enum Expr {
     StringLit(String),
     IntLit(u32),
     ArrayIndex { id: String, expr: Box<Expr> },
-    Variable(String),
+    Variable { id: String },
     BinExpr(Box<BinExpr>),
     FunctionCall(FunctionCall),
 }
