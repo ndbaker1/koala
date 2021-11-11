@@ -110,9 +110,11 @@ peg::parser! {
             / _ { vec![] }
 
         rule function_definition() -> FunctionDefinition
+            // Possible indicator of return value with '?'
             =  "fn " _ id:identifier() "(" args:arg_defs() ")" _ "?" _ "{" body:statements() "}" { FunctionDefinition { id, args, body, has_return_val: true } }
             /  "fn " _ id:identifier() "(" args:arg_defs() ")" _ "{" body:statements() "}" { FunctionDefinition { id, args, body, has_return_val: false } }
 
+        /// Top Level list of function definitions
         pub rule program() -> Program
             = _ f:function_definition() _ p:program() {
                 let mut program = p;
