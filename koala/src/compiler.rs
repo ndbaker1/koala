@@ -1,6 +1,5 @@
 use super::grammar::{
-    BinExpr, BinOp, Expr, FunctionCall, FunctionDefinition, If, Program, Statement, When, WhenCase,
-    WhenElse,
+    BinExpr, BinOp, Expr, FunctionCall, FunctionDefinition, If, Program, Statement,
 };
 use crate::instructions::{
     AND, BEQZ, CALL, END, EQ, GLOBAL_ARR_LOAD, GLOBAL_ARR_STORE, GLOBAL_LOAD, GLOBAL_STORE, GT,
@@ -252,14 +251,9 @@ impl CodeGen for Statement {
                     let offset = match context.find_var_index(id) {
                         Ok(pair) => pair.1,
                         Err(_) => {
-                            // move along
                             if *global {
-                                context
-                                    .global_vars
-                                    .0
-                                    .insert(id.clone(), context.global_vars.1);
-                                context.global_vars.1 += 1;
-                                context.global_vars.1 - 1
+                                // cannot happen since we do an AST prescan for globals
+                                panic!("could not find global index for array id: {}", id);
                             } else {
                                 // add the local variable to the frame if we are seeing it for the first time
                                 let scope = context.local_var_scope.last_mut().unwrap();
@@ -273,13 +267,19 @@ impl CodeGen for Statement {
 
                     // loop over size
                     for index in 0..*array_size {
+                        // if the values were specified, then go ahead and load them,
+                        // otherwise default them to 0
                         code.extend(if let Some(elements_vec) = elements {
                             elements_vec[index as usize].code_gen(context, start_addr)
                         } else {
                             vec![PUSH, 0]
                         });
+                        // load the LOCAL or GLOBAL store procedure with its correcponding aray index
                         code.extend([
-                            if *global { GLOBAL_STORE } else { LOCAL_STORE },
+                            match *global {
+                                true => GLOBAL_STORE,
+                                false => LOCAL_STORE,
+                            },
                             index + offset as u32,
                         ]);
                     }
@@ -287,7 +287,6 @@ impl CodeGen for Statement {
 
                 return code;
             }
-
             Self::FunctionCall(func_call) => func_call
                 .code_gen(context, start_addr)
                 .into_iter()
@@ -303,14 +302,15 @@ impl CodeGen for Statement {
             Self::While { cond, stmts } => {
                 // generate code for the comparison Expression
                 let mut code = cond.code_gen(context, start_addr);
-                // const offset
+                // const offsets for jumps around the code,
+                // since they arent accounted for in the statement block.
                 const BRANCH_CODE_OFFSET: usize = 2;
                 const JUMP_CODE_OFFSET: usize = 2;
                 // helper
                 let calc_offset = |base_code: &Vec<_>, stmt_code: &Vec<_>| {
                     start_addr + base_code.len() + stmt_code.len()
                 };
-
+                // generate code for the statements and update the start address
                 let mut code_to_execute = Vec::new();
                 for stmt in stmts {
                     code_to_execute.extend(stmt.code_gen(
@@ -323,9 +323,10 @@ impl CodeGen for Statement {
                     BEQZ,
                     1 + JUMP_CODE_OFFSET as u32 + calc_offset(&code, &code_to_execute) as u32,
                 ];
-
+                // jump back to the start of the while for the last step
                 let jump_code: [u32; JUMP_CODE_OFFSET] = [JUMP, (start_addr - 1) as u32];
 
+                // assemble the full code block
                 code.extend(branch_code);
                 code.extend(code_to_execute);
                 code.extend(jump_code);
@@ -346,7 +347,7 @@ impl CodeGen for If {
         // helper
         let calc_offset =
             |base_code: &Vec<_>, stmt_code: &Vec<_>| start_addr + base_code.len() + stmt_code.len();
-
+        // generate code for the statements and update the start address
         let mut code_to_execute = Vec::new();
         for stmt in &self.stmts {
             code_to_execute.extend(stmt.code_gen(
@@ -378,15 +379,15 @@ impl CodeGen for Expr {
                 .map(|a| a.unwrap())
                 .collect(),
             Self::ArrayIndex { id, expr } => {
-                let mut code = Vec::new();
-
+                // find scope type and index of array pointer by id
                 let (scope_type, index) = match context.find_var_index(id) {
                     Ok(pair) => pair,
                     Err(_) => panic!("cound not find array index to load for id: {}.", id),
                 };
-
-                code.extend([PUSH, index as u32]);
+                // push index onto stack and then load subscript index
+                let mut code = vec![PUSH, index as u32];
                 code.extend(expr.code_gen(context, start_addr));
+                // call to array load procedure
                 code.push(match scope_type {
                     ScopeType::Local => LOCAL_ARR_LOAD,
                     ScopeType::Global => GLOBAL_ARR_LOAD,
@@ -395,19 +396,12 @@ impl CodeGen for Expr {
                 return code;
             }
             Self::Variable { id } => {
+                // fetch scope type and index of variable by id
                 let (scope_type, index) = match context.find_var_index(id) {
                     Ok(pair) => pair,
-                    Err(_) => {
-                        context
-                            .global_vars
-                            .0
-                            .insert(id.clone(), context.global_vars.1);
-                        context.global_vars.1 += 1;
-
-                        (ScopeType::Global, context.global_vars.1 - 1)
-                    }
+                    Err(_) => panic!("could not find variable '{}'", id),
                 };
-
+                // return instructions to load the given index onto the stack
                 vec![
                     match scope_type {
                         ScopeType::Global => GLOBAL_LOAD,
@@ -425,10 +419,10 @@ impl CodeGen for Expr {
 impl CodeGen for BinExpr {
     fn code_gen(&self, context: &mut CompilerContext, start_addr: usize) -> Vec<u32> {
         let mut code = Vec::new();
-
+        // generate both operands
         code.extend(self.op2.code_gen(context, start_addr + 1));
         code.extend(self.op1.code_gen(context, start_addr + code.len() + 1));
-
+        // push operator code
         match self.binop {
             BinOp::Plus => code.push(IADD),
             BinOp::Minus => code.push(ISUB),
@@ -445,24 +439,6 @@ impl CodeGen for BinExpr {
         };
 
         return code;
-    }
-}
-
-impl CodeGen for When {
-    fn code_gen(&self, context: &mut CompilerContext, start_addr: usize) -> Vec<u32> {
-        vec![]
-    }
-}
-
-impl CodeGen for WhenCase {
-    fn code_gen(&self, context: &mut CompilerContext, start_addr: usize) -> Vec<u32> {
-        vec![]
-    }
-}
-
-impl CodeGen for WhenElse {
-    fn code_gen(&self, context: &mut CompilerContext, start_addr: usize) -> Vec<u32> {
-        vec![]
     }
 }
 
