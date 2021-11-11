@@ -28,7 +28,10 @@ pub struct FunctionDefinition {
 pub enum Statement {
     If(Box<If>),
     IfElse(Box<IfElse>),
-    While(Box<While>),
+    While {
+        cond: Expr,
+        stmts: Vec<Statement>,
+    },
     When(Box<When>),
     Print {
         expr: Option<Expr>,
@@ -65,13 +68,6 @@ pub struct IfElse {
     pub expr: Expr,
     pub stmts: Vec<Statement>,
     pub else_stmts: Vec<Statement>,
-}
-
-#[derive(Deserialize, Serialize)]
-
-pub struct While {
-    pub cond: Expr,
-    pub stmts: Vec<Statement>,
 }
 
 /// When:

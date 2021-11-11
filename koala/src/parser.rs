@@ -113,6 +113,9 @@ peg::parser! {
                 }))
             }
 
+        rule while() -> Statement
+            = "while" _ cond:compound_expr() _ "{" stmts:statements() "}" { Statement::While { cond, stmts } }
+
         rule return() -> Statement
             = "return" _ expr:compound_expr() { Statement::ReturnExpr(expr) }
             / "return" { Statement::Return }
@@ -120,6 +123,7 @@ peg::parser! {
         rule statement() -> Statement
             = print()
             / if()
+            / while()
             / return()
             / global_statement()
             // Function Call

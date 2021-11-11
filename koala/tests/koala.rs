@@ -170,4 +170,15 @@ code_tests! {
   }
   ",
   "6"),
+  while_control_test: ("
+  fn main() {
+    let a = 2
+    while a < 5 {
+      print(a)
+      a = a + 1
+    }
+  }
+  ",
+  "234"),
+
 }

@@ -231,12 +231,15 @@ impl<'a> VirtualMachine<'a> {
 
                 self.debug(&format!("storing with offset: {}\n", offset));
 
+                // Set a variable in the current Frame fromn the Stack
+                let val = self.stack.pop().unwrap();
+
                 let frame = self.call_stack.last_mut().unwrap();
                 // if we a referencing a new variable, then make more space
                 if offset == frame.locals.len() {
-                    // Set a variable in the current Frame fromn the Stack
-                    let val = self.stack.pop().unwrap();
                     frame.locals.push(val);
+                } else {
+                    frame.locals[offset] = val;
                 }
             }
             instructions::LOCAL_ARR_LOAD => {
@@ -263,6 +266,7 @@ impl<'a> VirtualMachine<'a> {
                     offset, index
                 ));
 
+                // Fetch current frame
                 let frame = self.call_stack.last_mut().unwrap();
                 // if we a referencing a new variable, then make more space
                 if offset == frame.locals.len() {
@@ -288,11 +292,14 @@ impl<'a> VirtualMachine<'a> {
 
                 self.debug(&format!("global storing with offset: {}\n", offset));
 
+                // Set a variable in the current Frame from the Stack
+                let val = self.stack.pop().unwrap();
+
                 // if we a referencing a new variable, then make more space
                 if offset == self.globals.len() {
-                    // Set a variable in the current Frame fromn the Stack
-                    let val = self.stack.pop().unwrap();
                     self.globals.push(val);
+                } else {
+                    self.globals[offset] = val;
                 }
             }
             instructions::GLOBAL_ARR_LOAD => {

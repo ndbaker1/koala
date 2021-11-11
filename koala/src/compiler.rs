@@ -4,7 +4,8 @@ use super::grammar::{
 };
 use crate::instructions::{
     AND, BEQZ, CALL, END, EQ, GLOBAL_ARR_LOAD, GLOBAL_LOAD, GLOBAL_STORE, GT, GTE, IADD, IDIV,
-    IMUL, ISUB, LOCAL_ARR_LOAD, LOCAL_LOAD, LOCAL_STORE, LT, LTE, NEQ, OR, POP, PRINT, PUSH, RET,
+    IMUL, ISUB, JUMP, LOCAL_ARR_LOAD, LOCAL_LOAD, LOCAL_STORE, LT, LTE, NEQ, OR, POP, PRINT, PUSH,
+    RET,
 };
 use core::panic;
 use std::collections::HashMap;
@@ -248,6 +249,38 @@ impl CodeGen for Statement {
                 .into_iter()
                 .chain([RET])
                 .collect(),
+            Self::While { cond, stmts } => {
+                // generate code for the comparison Expression
+                let mut code = cond.code_gen(context, start_addr);
+                // const offset
+                const BRANCH_CODE_OFFSET: usize = 2;
+                const JUMP_CODE_OFFSET: usize = 2;
+                // helper
+                let calc_offset = |base_code: &Vec<_>, stmt_code: &Vec<_>| {
+                    start_addr + base_code.len() + stmt_code.len()
+                };
+
+                let mut code_to_execute = Vec::new();
+                for stmt in stmts {
+                    code_to_execute.extend(stmt.code_gen(
+                        context,
+                        BRANCH_CODE_OFFSET + calc_offset(&code, &code_to_execute),
+                    ));
+                }
+                // prefix the statements with the branch
+                let branch_code: [u32; BRANCH_CODE_OFFSET] = [
+                    BEQZ,
+                    1 + JUMP_CODE_OFFSET as u32 + calc_offset(&code, &code_to_execute) as u32,
+                ];
+
+                let jump_code: [u32; JUMP_CODE_OFFSET] = [JUMP, (start_addr - 1) as u32];
+
+                code.extend(branch_code);
+                code.extend(code_to_execute);
+                code.extend(jump_code);
+
+                return code;
+            }
             _ => Vec::new(),
         }
     }
