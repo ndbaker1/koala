@@ -7,9 +7,13 @@ fn main() {
     if files.len() > 1 {
         let code = read_file(&files[1]);
 
-        let mut vm = VirtualMachine::new(&|msg: &str| print!("{}", msg), &|msg: &str| {
-            print!("{}", msg)
-        });
+        let debug_pipe = |msg: &str| {
+            if files.iter().any(|arg| arg == "--debug") {
+                print!("{}", msg);
+            }
+        };
+
+        let mut vm = VirtualMachine::new(&|msg: &str| print!("{}", msg), &debug_pipe);
         vm.run(&code);
     }
 }
