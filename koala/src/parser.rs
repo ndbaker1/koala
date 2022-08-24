@@ -1,6 +1,4 @@
-use super::grammar::{
-    BinExpr, BinOp, Expr, FunctionCall, FunctionDefinition, If, Program, Statement,
-};
+use super::ast::{BinExpr, BinOp, Expr, FunctionCall, FunctionDefinition, If, Program, Statement};
 use peg::{error::ParseError, str::LineCol};
 use std::vec;
 

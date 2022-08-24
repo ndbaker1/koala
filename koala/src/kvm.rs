@@ -1,5 +1,5 @@
 use crate::instructions;
-use std::{collections::HashMap, panic};
+use std::collections::HashMap;
 
 /// The Koala Language Virtual Machine
 pub struct VirtualMachine<'a> {
@@ -10,7 +10,7 @@ pub struct VirtualMachine<'a> {
     /// Frames indicate the start of a function call,
     /// which will automatically take care of the need to track Frame Pointers
     call_stack: Vec<Frame>,
-    // Executtion/Data Stack
+    // Execution/Data Stack
     stack: Vec<i32>,
     /// Globals
     globals: HashMap<usize, i32>,
@@ -26,10 +26,10 @@ pub struct VirtualMachine<'a> {
 pub type OutputCallback<'a> = &'a dyn Fn(&str) -> ();
 
 #[derive(Debug)]
-pub struct Frame {
-    pub fn_addr: usize,
-    pub locals: Vec<i32>,
-    pub return_addr: usize,
+struct Frame {
+    fn_addr: usize,
+    locals: Vec<i32>,
+    return_addr: usize,
 }
 
 impl<'a> VirtualMachine<'a> {
@@ -64,7 +64,7 @@ impl<'a> VirtualMachine<'a> {
         self.code[self.pc - 1]
     }
 
-    fn execute(&mut self) {
+    fn execute(&mut self) -> Option<()> {
         // Pull the opcode fetched prior
         let opcode = self.fetch();
 
@@ -97,8 +97,8 @@ impl<'a> VirtualMachine<'a> {
             | instructions::LTE
             | instructions::EQ
             | instructions::NEQ => {
-                let first = self.stack.pop().unwrap();
-                let second = self.stack.pop().unwrap();
+                let first = self.stack.pop()?;
+                let second = self.stack.pop()?;
 
                 let result = match opcode {
                     instructions::GT => first > second,
@@ -107,47 +107,47 @@ impl<'a> VirtualMachine<'a> {
                     instructions::LTE => first <= second,
                     instructions::EQ => first == second,
                     instructions::NEQ => first != second,
-                    _ => return,
+                    _ => panic!("impossible path."),
                 };
 
                 self.stack.push(result as i32);
             }
             instructions::OR | instructions::AND => {
-                let first = self.stack.pop().unwrap() != 0;
-                let second = self.stack.pop().unwrap() != 0;
+                let first = self.stack.pop()? != 0;
+                let second = self.stack.pop()? != 0;
 
                 let result = match opcode {
                     instructions::OR => first || second,
                     instructions::AND => first && second,
-                    _ => return,
+                    _ => panic!("impossible path."),
                 };
 
                 self.stack.push(result as i32);
             }
             instructions::IADD | instructions::IMUL | instructions::ISUB | instructions::IDIV => {
-                let first = self.stack.pop().unwrap();
-                let second = self.stack.pop().unwrap();
+                let first = self.stack.pop()?;
+                let second = self.stack.pop()?;
 
                 let result = match opcode {
                     instructions::IADD => first + second,
                     instructions::IMUL => first * second,
                     instructions::ISUB => first - second,
                     instructions::IDIV => first / second,
-                    _ => return,
+                    _ => panic!("impossible path."),
                 };
 
                 self.stack.push(result);
             }
             instructions::FADD | instructions::FMUL | instructions::FSUB | instructions::FDIV => {
-                let first = self.stack.pop().unwrap();
-                let second = self.stack.pop().unwrap();
+                let first = self.stack.pop()?;
+                let second = self.stack.pop()?;
 
                 let result = match opcode {
                     instructions::FADD => first + second,
                     instructions::FMUL => first * second,
                     instructions::FSUB => first - second,
                     instructions::FDIV => first / second,
-                    _ => return,
+                    _ => panic!("impossible path."),
                 };
 
                 self.stack.push(result);
@@ -324,8 +324,12 @@ impl<'a> VirtualMachine<'a> {
                 self.globals
                     .insert(offset + index, self.stack.pop().unwrap());
             }
-            _ => { /* no-op */ }
+            _ => {
+                self.debug(&format!("encountered a no-op [{}]", opcode));
+            }
         };
+
+        None
     }
 
     fn print(&self, message: &str) {

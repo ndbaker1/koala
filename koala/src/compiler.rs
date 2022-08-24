@@ -1,12 +1,9 @@
-use super::grammar::{
-    BinExpr, BinOp, Expr, FunctionCall, FunctionDefinition, If, Program, Statement,
-};
+use super::ast::{BinExpr, BinOp, Expr, FunctionCall, FunctionDefinition, If, Program, Statement};
 use crate::instructions::{
     AND, BEQZ, CALL, END, EQ, GLOBAL_ARR_LOAD, GLOBAL_ARR_STORE, GLOBAL_LOAD, GLOBAL_STORE, GT,
     GTE, IADD, IDIV, IMUL, ISUB, JUMP, LOCAL_ARR_LOAD, LOCAL_ARR_STORE, LOCAL_LOAD, LOCAL_STORE,
     LT, LTE, NEQ, OR, POP, PRINT, PUSH, RET,
 };
-use core::panic;
 use std::collections::HashMap;
 
 pub struct CompilerContext {
