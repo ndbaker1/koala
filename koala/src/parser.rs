@@ -163,26 +163,28 @@ pub fn parse_code(code: &str) -> Result<Program, ParseError<LineCol>> {
     koala_parser::program(code)
 }
 
-macro_rules! parser_tests {
-    ($($name:ident: $value:expr,)*) => {$(
-        #[test]
-        fn $name() {
-            parse_code($value).unwrap();
-        }
-    )*}
-}
+#[cfg(test)]
+mod test {
+    macro_rules! parser_tests {
+        ($($name:ident: $value:expr,)*) => {$(
+            #[test]
+            fn $name() {
+                super::parse_code($value).unwrap();
+            }
+        )*}
+    }
 
-parser_tests! {
-    empty_main_test: "fn main() {}",
-    main_test: "fn main() {
+    parser_tests! {
+        empty_main_test: "fn main() {}",
+        main_test: "fn main() {
         print(2)
     }",
-    comment_test: "
+        comment_test: "
     fn main() {
         // print(2)
         print(2)
     }",
-    spaced_main_test: "
+        spaced_main_test: "
 
     fn main() {
 
@@ -191,7 +193,7 @@ parser_tests! {
     }
 
     ",
-    multiple_fn_test: "
+        multiple_fn_test: "
     fn main() {
       print(2)
     }
@@ -199,21 +201,21 @@ parser_tests! {
       print(5)
     }
     ",
-    binary_expr_test: "fn main() {
+        binary_expr_test: "fn main() {
         print(2+5)
     }",
-    function_call_test: "
+        function_call_test: "
     fn main() {
       func()
     }",
-    if_test: "
+        if_test: "
     fn main() {
       if 3 {
           print(3)
       }
     }
     ",
-    recursion_test: "
+        recursion_test: "
     fn main() {
         recurse()
     }
@@ -221,7 +223,7 @@ parser_tests! {
         recurse() 
     }
     ",
-    void_return_test: "
+        void_return_test: "
     fn main() {
         recurse()
     }
@@ -229,7 +231,7 @@ parser_tests! {
         return
     }
     ",
-    return_expr_test: "
+        return_expr_test: "
     fn main() {
         print(return_value())
     }
@@ -237,7 +239,7 @@ parser_tests! {
         return 5
     }
     ",
-    args_test: "
+        args_test: "
     fn main() {
         test(4, 6)
     }
@@ -245,7 +247,7 @@ parser_tests! {
         return n * m
     }
     ",
-    factorial_test: "
+        factorial_test: "
     fn main() {
         factorial(4)
     }
@@ -253,14 +255,14 @@ parser_tests! {
         return factorial(n - 1) * n
     }
     ",
-    variable_usages_test: "
+        variable_usages_test: "
     fn main() {
         let a = 2
         b = 3
         print(a+b)
     }
     ",
-    comparisons_parser_test: "
+        comparisons_parser_test: "
     fn main() {
         if 1 < 2 { }
         if 2 > 1 { }
@@ -270,4 +272,5 @@ parser_tests! {
         if 1 >= 1 { }
     }
     ",
+    }
 }
