@@ -40,6 +40,11 @@ Startup the browser UI using
 npm run dev
 ```
 
+### Extended Work
+- [ ] add some QoL language features
+- [ ] demostrate compiling to LLVM IR
+- [ ] cleanup VM architecture, decide if call stack frame separation is necesary
+
 # Extra info
 
 ## Compiler Architecture
